@@ -102,6 +102,8 @@ namespace MunicipalServicesApp
             //
             // flpFooterRight
             //
+            this.flpFooterRight.AutoSize = true;
+            this.flpFooterRight.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpFooterRight.Controls.Add(this.btnNext);
             this.flpFooterRight.Controls.Add(this.btnBack);
             this.flpFooterRight.Controls.Add(this.btnCloseWizard);
@@ -156,6 +158,8 @@ namespace MunicipalServicesApp
             //
             // flpFooterLeft
             //
+            this.flpFooterLeft.AutoSize = true;
+            this.flpFooterLeft.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpFooterLeft.Controls.Add(this.btnCancel);
             this.flpFooterLeft.Dock = System.Windows.Forms.DockStyle.Left;
             this.flpFooterLeft.Name = "flpFooterLeft";
