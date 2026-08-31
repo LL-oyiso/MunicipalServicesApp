@@ -98,10 +98,21 @@ MunicipalServicesApp\MunicipalServicesApp\bin\Debug\MunicipalServicesApp.exe
       are ignored. Select one or more entries and click **Remove** to take them off the
       report. You can continue without attaching anything.
    5. **Contact** - your first name and surname, and how you would like to be kept updated.
-      Choosing **Mobile (SMS)** makes the mobile number required and checks it is ten digits;
-      choosing **Email** makes the email address required and sanity-checks its format. The
-      `*` markers move between the two fields as you switch, so only what is needed is asked
-      for.
+      Choosing **Mobile (SMS)** makes the mobile number required; choosing **Email** makes the
+      email address required. The `*` markers move between the two fields as you switch, so
+      only what is needed is asked for. Whichever fields you do fill in are format-checked,
+      including the one you didn't pick, so a typo in the spare field is still caught:
+      - Names must be letters only (spaces, hyphens and apostrophes are allowed).
+      - An email address needs a single `@`, a local part, and a dotted domain ending in a
+        letters-only top-level domain - so `name@example.com` and `name@example.co.za` pass,
+        while `name@example` or `name@example.` are rejected.
+      - Two-letter endings have to stay valid for South African addresses like `.co.za`, which
+        would otherwise let a mistyped `gmail.co` through. The major free providers (Gmail,
+        Outlook, Hotmail, Yahoo, iCloud, Live and AOL) only ever use `.com`, so those are
+        checked by name and the error suggests the correct ending.
+      - A mobile number must be exactly 10 digits starting with `0`, and the digit after that
+        leading `0` cannot also be `0`, since no South African area or network code begins
+        `00`. That rules out placeholder entries such as `0000000000`.
    6. **Summary** - a review screen with one card per section showing exactly what will be
       submitted. Each card has an **Edit** link that jumps straight back to that step with
       everything you have already entered still in place. When you return to the summary it
