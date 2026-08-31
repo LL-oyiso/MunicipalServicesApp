@@ -58,6 +58,15 @@ namespace MunicipalServicesApp
             "Sanitation", "Roads", "Utilities", "Electricity", "Water", "Other"
         };
 
+        /// <summary>
+        /// Free email providers that only ever use a .com ending, so a near miss like
+        /// "gmail.co" can be caught as a typo rather than accepted as a real domain.
+        /// </summary>
+        private static readonly string[] KnownDotComProviders =
+        {
+            "gmail", "outlook", "hotmail", "yahoo", "icloud", "live", "aol"
+        };
+
         private readonly List<string> _attachedFiles = new List<string>();
         private readonly Panel[] _stepPanels = new Panel[StepCount];
 
@@ -744,12 +753,14 @@ namespace MunicipalServicesApp
 
             // Both fields are checked whenever they hold anything, not just the chosen
             // channel - a typo in the spare field is still a typo we would rather catch.
-            if (email.Length > 0 && !IsValidEmailAddress(email))
+            if (email.Length > 0)
             {
-                ShowValidationError(
-                    "That email address doesn't look right. It should look like name@example.com.",
-                    txtEmail);
-                return false;
+                string emailProblem;
+                if (!IsValidEmailAddress(email, out emailProblem))
+                {
+                    ShowValidationError(emailProblem, txtEmail);
+                    return false;
+                }
             }
 
             if (mobile.Length > 0)
@@ -800,16 +811,18 @@ namespace MunicipalServicesApp
         /// ending in a letters-only top-level domain, so "name@example" or
         /// "name@example." are rejected while "name@example.co.za" is accepted.
         /// </summary>
-        private static bool IsValidEmailAddress(string value)
+        private static bool IsValidEmailAddress(string value, out string problem)
         {
             if (value.Any(char.IsWhiteSpace) || !value.All(IsAllowedEmailCharacter))
             {
+                problem = "An email address can't contain spaces or unusual symbols.";
                 return false;
             }
 
             var parts = value.Split('@');
             if (parts.Length != 2)
             {
+                problem = "An email address needs exactly one @ sign, for example name@example.com.";
                 return false;
             }
 
@@ -818,17 +831,38 @@ namespace MunicipalServicesApp
 
             if (localPart.Length == 0 || localPart.StartsWith(".") || localPart.EndsWith(".") || localPart.Contains(".."))
             {
+                problem = "Please check the part before the @ - it can't be empty or start or end with a dot.";
                 return false;
             }
 
             var domainLabels = domain.Split('.');
             if (domainLabels.Length < 2 || domainLabels.Any(label => label.Length == 0))
             {
+                problem = "The part after the @ needs a full domain, for example example.com or example.co.za.";
                 return false;
             }
 
             var topLevelDomain = domainLabels[domainLabels.Length - 1];
-            return topLevelDomain.Length >= 2 && topLevelDomain.All(char.IsLetter);
+            if (topLevelDomain.Length < 2 || !topLevelDomain.All(char.IsLetter))
+            {
+                problem = "The email address needs a valid ending such as .com or .co.za.";
+                return false;
+            }
+
+            // Two-letter endings have to stay allowed for addresses like .co.za, which
+            // lets a mistyped "gmail.co" slip past the general check - so the big free
+            // providers, which only ever use .com, are checked by name.
+            var providerName = domainLabels[domainLabels.Length - 2];
+            if (KnownDotComProviders.Contains(providerName.ToLowerInvariant())
+                && !topLevelDomain.Equals("com", StringComparison.OrdinalIgnoreCase))
+            {
+                problem = "Did you mean " + providerName.ToLowerInvariant() + ".com? "
+                    + "Addresses at " + providerName.ToLowerInvariant() + " always end in .com.";
+                return false;
+            }
+
+            problem = null;
+            return true;
         }
 
         private static bool IsAllowedEmailCharacter(char character)
