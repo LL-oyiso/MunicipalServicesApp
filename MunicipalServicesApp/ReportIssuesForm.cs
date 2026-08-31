@@ -505,7 +505,7 @@ namespace MunicipalServicesApp
             AddRow(body, 24F);
 
             body.Controls.Add(grid, 0, 0);
-            body.Controls.Add(CreateHintLabel("Only the method you choose above is required - the other is optional."), 0, 1);
+            body.Controls.Add(CreateHintLabel("Only the method you choose above is required. Mobile numbers are 10 digits starting with 0, for example 0821234567."), 0, 1);
 
             return panel;
         }
@@ -717,63 +717,160 @@ namespace MunicipalServicesApp
 
         private bool ValidateContactStep()
         {
-            if (string.IsNullOrWhiteSpace(txtFirstName.Text))
+            if (!ValidateNameField(txtFirstName, "first name"))
             {
-                ShowValidationError("Please enter your first name.", txtFirstName);
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(txtSurname.Text))
+            if (!ValidateNameField(txtSurname, "surname"))
             {
-                ShowValidationError("Please enter your surname.", txtSurname);
                 return false;
             }
 
-            if (rbEmail.Checked)
+            var email = txtEmail.Text.Trim();
+            var mobile = txtMobile.Text.Trim();
+
+            if (rbEmail.Checked && email.Length == 0)
             {
-                var email = txtEmail.Text.Trim();
-                if (string.IsNullOrWhiteSpace(email))
-                {
-                    ShowValidationError("Please enter your email address, or choose to be updated by SMS instead.", txtEmail);
-                    return false;
-                }
-                if (!LooksLikeEmailAddress(email))
-                {
-                    ShowValidationError("That email address doesn't look right. Please check it and try again.", txtEmail);
-                    return false;
-                }
-                return true;
+                ShowValidationError("Please enter your email address, or choose to be updated by SMS instead.", txtEmail);
+                return false;
             }
 
-            var mobileDigits = DigitsOnly(txtMobile.Text);
-            if (mobileDigits.Length == 0)
+            if (!rbEmail.Checked && mobile.Length == 0)
             {
                 ShowValidationError("Please enter your mobile number, or choose to be updated by email instead.", txtMobile);
                 return false;
             }
-            if (mobileDigits.Length != 10)
+
+            // Both fields are checked whenever they hold anything, not just the chosen
+            // channel - a typo in the spare field is still a typo we would rather catch.
+            if (email.Length > 0 && !IsValidEmailAddress(email))
             {
-                ShowValidationError("Please enter a 10-digit mobile number, for example 0821234567.", txtMobile);
+                ShowValidationError(
+                    "That email address doesn't look right. It should look like name@example.com.",
+                    txtEmail);
+                return false;
+            }
+
+            if (mobile.Length > 0)
+            {
+                string mobileProblem;
+                if (!IsValidMobileNumber(mobile, out mobileProblem))
+                {
+                    ShowValidationError(mobileProblem, txtMobile);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool ValidateNameField(TextBox field, string fieldDescription)
+        {
+            var value = field.Text.Trim();
+
+            if (value.Length == 0)
+            {
+                ShowValidationError("Please enter your " + fieldDescription + ".", field);
+                return false;
+            }
+
+            if (value.Length < 2 || !value.All(IsAllowedNameCharacter))
+            {
+                ShowValidationError(
+                    "Please enter your " + fieldDescription + " using letters only - no digits or symbols.",
+                    field);
                 return false;
             }
 
             return true;
         }
 
-        private static bool LooksLikeEmailAddress(string value)
+        private static bool IsAllowedNameCharacter(char character)
         {
-            var atIndex = value.IndexOf('@');
-            if (atIndex <= 0 || atIndex == value.Length - 1)
+            return char.IsLetter(character)
+                || character == ' '
+                || character == '-'
+                || character == '\''
+                || character == '.';
+        }
+
+        /// <summary>
+        /// Checks an address has a single @, a real local part, and a dotted domain
+        /// ending in a letters-only top-level domain, so "name@example" or
+        /// "name@example." are rejected while "name@example.co.za" is accepted.
+        /// </summary>
+        private static bool IsValidEmailAddress(string value)
+        {
+            if (value.Any(char.IsWhiteSpace) || !value.All(IsAllowedEmailCharacter))
             {
                 return false;
             }
 
-            var domain = value.Substring(atIndex + 1);
-            return domain.Contains(".")
-                && !domain.StartsWith(".")
-                && !domain.EndsWith(".")
-                && !domain.Contains("@")
-                && !value.Contains(" ");
+            var parts = value.Split('@');
+            if (parts.Length != 2)
+            {
+                return false;
+            }
+
+            var localPart = parts[0];
+            var domain = parts[1];
+
+            if (localPart.Length == 0 || localPart.StartsWith(".") || localPart.EndsWith(".") || localPart.Contains(".."))
+            {
+                return false;
+            }
+
+            var domainLabels = domain.Split('.');
+            if (domainLabels.Length < 2 || domainLabels.Any(label => label.Length == 0))
+            {
+                return false;
+            }
+
+            var topLevelDomain = domainLabels[domainLabels.Length - 1];
+            return topLevelDomain.Length >= 2 && topLevelDomain.All(char.IsLetter);
+        }
+
+        private static bool IsAllowedEmailCharacter(char character)
+        {
+            return char.IsLetterOrDigit(character) || "@._-+'".IndexOf(character) >= 0;
+        }
+
+        /// <summary>
+        /// Checks a South African mobile number: exactly 10 digits starting with 0,
+        /// where the digit after the leading 0 cannot also be 0 (no network or area
+        /// code begins 00), which also rules out placeholder numbers like 0000000000.
+        /// </summary>
+        private static bool IsValidMobileNumber(string value, out string problem)
+        {
+            var digits = DigitsOnly(value);
+
+            if (digits.Length != value.Count(character => !char.IsWhiteSpace(character)))
+            {
+                problem = "A mobile number can only contain digits, for example 0821234567.";
+                return false;
+            }
+
+            if (digits.Length != 10)
+            {
+                problem = "A mobile number must be exactly 10 digits, for example 0821234567.";
+                return false;
+            }
+
+            if (digits[0] != '0')
+            {
+                problem = "A mobile number must start with 0, for example 0821234567.";
+                return false;
+            }
+
+            if (digits[1] == '0')
+            {
+                problem = "That doesn't look like a real mobile number - the digit after the leading 0 can't be another 0.";
+                return false;
+            }
+
+            problem = null;
+            return true;
         }
 
         private static string DigitsOnly(string value)
@@ -1156,7 +1253,7 @@ namespace MunicipalServicesApp
             issue.ContactFirstName = txtFirstName.Text.Trim();
             issue.ContactSurname = txtSurname.Text.Trim();
             issue.ContactEmail = txtEmail.Text.Trim();
-            issue.ContactMobile = txtMobile.Text.Trim();
+            issue.ContactMobile = DigitsOnly(txtMobile.Text);
             issue.PreferredContactMethod = rbEmail.Checked ? ContactMethod.Email : ContactMethod.Mobile;
         }
 
