@@ -58,7 +58,7 @@ namespace MunicipalServicesApp
             this.layoutRoot.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.layoutRoot.Dock = System.Windows.Forms.DockStyle.Fill;
             this.layoutRoot.RowCount = 3;
-            this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 96F));
+            this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 112F));
             this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 64F));
             this.layoutRoot.Controls.Add(this.pnlHeaderBar, 0, 0);
@@ -83,7 +83,7 @@ namespace MunicipalServicesApp
             // lblWizardTitle
             //
             this.lblWizardTitle.Dock = System.Windows.Forms.DockStyle.Top;
-            this.lblWizardTitle.Height = 28;
+            this.lblWizardTitle.Height = 34;
             this.lblWizardTitle.Name = "lblWizardTitle";
             this.lblWizardTitle.Text = "Report an Issue";
             this.lblWizardTitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;

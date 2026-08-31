@@ -62,7 +62,6 @@ namespace MunicipalServicesApp
         private readonly Panel[] _stepPanels = new Panel[StepCount];
 
         private int _currentStep;
-        private Issue _submittedIssue;
 
         private Label lblFooterMessage;
 
@@ -83,7 +82,9 @@ namespace MunicipalServicesApp
         private Label lblMobileField;
         private RadioButton rbEmail;
         private RadioButton rbMobile;
-        private Label lblSummaryPlaceholder;
+        private FlowLayoutPanel flpSummary;
+        private bool _rebuildingSummary;
+        private Label lblReferenceNumber;
         private Label lblConfirmationDetail;
 
         public ReportIssuesForm()
@@ -534,20 +535,23 @@ namespace MunicipalServicesApp
             TableLayoutPanel body;
             var panel = CreateStepShell(
                 "Check your report",
-                "Please review everything below. You can go back and change any part before submitting.",
+                "Please review everything below. Use the Edit links to change any section before submitting.",
                 out body);
 
-            lblSummaryPlaceholder = new Label
+            flpSummary = new FlowLayoutPanel
             {
-                AutoSize = false,
+                AutoScroll = true,
+                BackColor = AppTheme.BackgroundColor,
                 Dock = DockStyle.Fill,
-                Font = AppTheme.BodyFont,
-                ForeColor = AppTheme.PrimaryColor,
-                TextAlign = ContentAlignment.TopLeft
+                FlowDirection = FlowDirection.TopDown,
+                Margin = new Padding(0),
+                Padding = new Padding(0, 0, 4, 0),
+                WrapContents = false
             };
+            flpSummary.Resize += flpSummary_Resize;
 
             AddFillRow(body);
-            body.Controls.Add(lblSummaryPlaceholder, 0, 0);
+            body.Controls.Add(flpSummary, 0, 0);
 
             return panel;
         }
@@ -560,17 +564,35 @@ namespace MunicipalServicesApp
                 "Thank you for helping your community. Please keep your reference number for any follow-up.",
                 out body);
 
-            lblConfirmationDetail = new Label
+            lblReferenceNumber = new Label
             {
                 AutoSize = false,
                 Dock = DockStyle.Fill,
+                Font = AppTheme.TitleFont,
+                ForeColor = AppTheme.SuccessColor,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            lblConfirmationDetail = new Label
+            {
+                AutoSize = false,
+                BackColor = Color.White,
+                Dock = DockStyle.Fill,
                 Font = AppTheme.BodyFont,
                 ForeColor = AppTheme.PrimaryColor,
+                Padding = new Padding(14, 12, 14, 12),
                 TextAlign = ContentAlignment.TopLeft
             };
 
+            AddRow(body, 24F);
+            AddRow(body, 40F);
+            AddRow(body, 30F);
             AddFillRow(body);
-            body.Controls.Add(lblConfirmationDetail, 0, 0);
+
+            body.Controls.Add(CreateFieldLabel("Your reference number"), 0, 0);
+            body.Controls.Add(lblReferenceNumber, 0, 1);
+            body.Controls.Add(CreateHintLabel("Quote this number whenever you follow up on this report."), 0, 2);
+            body.Controls.Add(lblConfirmationDetail, 0, 3);
 
             return panel;
         }
@@ -585,17 +607,19 @@ namespace MunicipalServicesApp
         /// </summary>
         private void GoToStep(int stepIndex)
         {
-            if (stepIndex == StepSummary)
-            {
-                BuildSummaryContent();
-            }
-
             for (var i = 0; i < StepCount; i++)
             {
                 _stepPanels[i].Visible = i == stepIndex;
             }
 
             _currentStep = stepIndex;
+
+            // Built after the panel is visible, so the review cards can size themselves
+            // against the panel's real width rather than its pre-layout default.
+            if (stepIndex == StepSummary)
+            {
+                BuildSummaryContent();
+            }
 
             // On the Confirmation screen the index deliberately runs past the last
             // chip so every step in the indicator renders as completed.
@@ -803,6 +827,23 @@ namespace MunicipalServicesApp
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
+            if (HasAnyDataEntered())
+            {
+                var answer = MessageBox.Show(
+                    "This report hasn't been submitted yet, so everything you've entered will be lost." +
+                    Environment.NewLine + Environment.NewLine +
+                    "Are you sure you want to cancel it?",
+                    "Discard this report?",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2);
+
+                if (answer != DialogResult.Yes)
+                {
+                    return;
+                }
+            }
+
             this.Close();
         }
 
@@ -923,34 +964,158 @@ namespace MunicipalServicesApp
             lblAttachmentHint.ForeColor = AppTheme.SuccessColor;
         }
 
+        private void flpSummary_Resize(object sender, EventArgs e)
+        {
+            // Section widths are calculated from the panel's client area, so they have
+            // to be recalculated whenever the form is resized while Summary is showing.
+            if (_currentStep == StepSummary && !_rebuildingSummary)
+            {
+                BuildSummaryContent();
+            }
+        }
+
+        /// <summary>
+        /// Rebuilds the review screen from scratch every time the user arrives at it,
+        /// so it always reflects the latest answers - including changes made by jumping
+        /// back through an Edit link.
+        /// </summary>
         private void BuildSummaryContent()
         {
-            var lines = new List<string>
+            _rebuildingSummary = true;
+            flpSummary.SuspendLayout();
+
+            try
             {
-                "Category: " + (cmbCategory.SelectedItem == null ? "-" : cmbCategory.SelectedItem.ToString()),
-                string.Empty,
-                "Description: " + rtbDescription.Text.Trim(),
-                string.Empty,
-                "Location: " + txtLocation.Text.Trim()
+                foreach (Control control in flpSummary.Controls.Cast<Control>().ToList())
+                {
+                    flpSummary.Controls.Remove(control);
+                    control.Dispose();
+                }
+
+                AddSummarySection(
+                    "Category",
+                    StepCategory,
+                    cmbCategory.SelectedItem == null ? "Not selected" : cmbCategory.SelectedItem.ToString());
+
+                AddSummarySection(
+                    "Description",
+                    StepDescription,
+                    DisplayValueOrDash(rtbDescription.Text));
+
+                var locationLines = new List<string> { DisplayValueOrDash(txtLocation.Text) };
+                if (!string.IsNullOrWhiteSpace(txtAdditionalLocation.Text))
+                {
+                    locationLines.Add("Additional information: " + txtAdditionalLocation.Text.Trim());
+                }
+                AddSummarySection("Location", StepLocation, string.Join(Environment.NewLine, locationLines.ToArray()));
+
+                AddSummarySection(
+                    "Attachments",
+                    StepAttachment,
+                    _attachedFiles.Count == 0
+                        ? "No files attached"
+                        : string.Join(Environment.NewLine, _attachedFiles.Select(Path.GetFileName).ToArray()));
+
+                var contactLines = new List<string>
+                {
+                    DisplayValueOrDash(txtFirstName.Text + " " + txtSurname.Text)
+                };
+                if (!string.IsNullOrWhiteSpace(txtEmail.Text))
+                {
+                    contactLines.Add("Email: " + txtEmail.Text.Trim());
+                }
+                if (!string.IsNullOrWhiteSpace(txtMobile.Text))
+                {
+                    contactLines.Add("Mobile: " + txtMobile.Text.Trim());
+                }
+                contactLines.Add("Preferred updates: " + (rbEmail.Checked ? "Email" : "SMS"));
+
+                AddSummarySection("Contact details", StepContact, string.Join(Environment.NewLine, contactLines.ToArray()));
+            }
+            finally
+            {
+                flpSummary.ResumeLayout(true);
+                _rebuildingSummary = false;
+            }
+        }
+
+        /// <summary>
+        /// Adds one review card: the section name, an Edit link back to the step that
+        /// owns it, and the values the resident entered there.
+        /// </summary>
+        private void AddSummarySection(string title, int editStepIndex, string body)
+        {
+            var sectionWidth = SummarySectionWidth();
+
+            var section = new TableLayoutPanel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                BackColor = Color.White,
+                ColumnCount = 2,
+                Margin = new Padding(0, 0, 0, 12),
+                MinimumSize = new Size(sectionWidth, 0),
+                Padding = new Padding(14, 10, 14, 12)
+            };
+            section.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            section.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+
+            var lblTitle = new Label
+            {
+                AutoSize = true,
+                Font = AppTheme.LabelFont,
+                ForeColor = AppTheme.PrimaryColor,
+                Margin = new Padding(0, 0, 0, 6),
+                Text = title
             };
 
-            if (!string.IsNullOrWhiteSpace(txtAdditionalLocation.Text))
+            var lnkEdit = new LinkLabel
             {
-                lines.Add("Additional location information: " + txtAdditionalLocation.Text.Trim());
+                ActiveLinkColor = AppTheme.PrimaryColor,
+                AutoSize = true,
+                Font = AppTheme.SmallFont,
+                LinkColor = AppTheme.AccentColor,
+                Margin = new Padding(12, 0, 0, 6),
+                Text = "Edit",
+                TextAlign = ContentAlignment.MiddleRight
+            };
+            lnkEdit.LinkClicked += (sender, e) => GoToStep(editStepIndex);
+
+            var lblBody = new Label
+            {
+                AutoSize = true,
+                Font = AppTheme.BodyFont,
+                ForeColor = AppTheme.SecondaryColor,
+                Margin = new Padding(0),
+                MaximumSize = new Size(sectionWidth - section.Padding.Horizontal, 0),
+                Text = body
+            };
+
+            section.Controls.Add(lblTitle, 0, 0);
+            section.Controls.Add(lnkEdit, 1, 0);
+            section.Controls.Add(lblBody, 0, 1);
+            section.SetColumnSpan(lblBody, 2);
+
+            flpSummary.Controls.Add(section);
+        }
+
+        private int SummarySectionWidth()
+        {
+            var available = flpSummary.ClientSize.Width - flpSummary.Padding.Horizontal;
+
+            // Leave room for the vertical scrollbar that is about to appear once the
+            // cards are added, otherwise they overhang and force a horizontal one too.
+            if (!flpSummary.VerticalScroll.Visible)
+            {
+                available -= SystemInformation.VerticalScrollBarWidth;
             }
 
-            lines.Add(string.Empty);
-            lines.Add("Attachments: " + (_attachedFiles.Count == 0
-                ? "none"
-                : string.Join(", ", _attachedFiles.Select(Path.GetFileName).ToArray())));
+            return available < 320 ? 320 : available;
+        }
 
-            lines.Add(string.Empty);
-            lines.Add("Contact: " + (txtFirstName.Text.Trim() + " " + txtSurname.Text.Trim()).Trim());
-            lines.Add("Preferred updates: " + (rbEmail.Checked
-                ? "Email - " + txtEmail.Text.Trim()
-                : "SMS - " + txtMobile.Text.Trim()));
-
-            lblSummaryPlaceholder.Text = string.Join(Environment.NewLine, lines.ToArray());
+        private static string DisplayValueOrDash(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? "Not provided" : value.Trim();
         }
 
         #endregion
@@ -972,7 +1137,6 @@ namespace MunicipalServicesApp
                 ApplyContactDetails(issue);
 
                 IssueRepository.AddIssue(issue);
-                _submittedIssue = issue;
 
                 BuildConfirmationContent(issue);
                 GoToStep(StepConfirmation);
@@ -998,17 +1162,34 @@ namespace MunicipalServicesApp
 
         private void BuildConfirmationContent(Issue issue)
         {
-            var lines = new[]
+            lblReferenceNumber.Text = issue.ReferenceNumber;
+
+            var reportedBy = (issue.ContactFirstName + " " + issue.ContactSurname).Trim();
+            var updateChannel = issue.PreferredContactMethod == ContactMethod.Email
+                ? "Email (" + issue.ContactEmail + ")"
+                : "SMS (" + issue.ContactMobile + ")";
+
+            var lines = new List<string>
             {
-                "Your reference number is " + issue.ReferenceNumber + ".",
-                string.Empty,
+                "Logged: " + issue.DateReported.ToString("dd MMMM yyyy 'at' HH:mm"),
                 "Category: " + issue.Category,
-                "Location: " + issue.Location,
-                "Logged: " + issue.DateReported.ToString("dd MMMM yyyy HH:mm"),
-                "Attachments: " + issue.AttachmentPaths.Count
+                "Location: " + issue.Location
             };
 
-            lblConfirmationDetail.Text = string.Join(Environment.NewLine, lines);
+            if (!string.IsNullOrWhiteSpace(issue.AdditionalLocationInfo))
+            {
+                lines.Add("Additional information: " + issue.AdditionalLocationInfo);
+            }
+
+            lines.Add("Attachments: " + (issue.AttachmentPaths.Count == 0
+                ? "none"
+                : issue.AttachmentPaths.Count + (issue.AttachmentPaths.Count == 1 ? " file" : " files")));
+            lines.Add("Reported by: " + reportedBy);
+            lines.Add("We will update you by: " + updateChannel);
+            lines.Add(string.Empty);
+            lines.Add("This is report number " + IssueRepository.Count + " logged in this session.");
+
+            lblConfirmationDetail.Text = string.Join(Environment.NewLine, lines.ToArray());
         }
 
         private void ResetWizard()
@@ -1025,7 +1206,9 @@ namespace MunicipalServicesApp
 
             _attachedFiles.Clear();
             lstAttachments.Items.Clear();
-            _submittedIssue = null;
+
+            lblReferenceNumber.Text = string.Empty;
+            lblConfirmationDetail.Text = string.Empty;
 
             UpdateDescriptionCount();
             UpdateAttachmentHint();
