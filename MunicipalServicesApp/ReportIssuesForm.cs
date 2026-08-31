@@ -156,10 +156,10 @@ namespace MunicipalServicesApp
 
                 IssueRepository.AddIssue(issue);
 
-                var reportNumber = IssueRepository.Count;
                 MessageBox.Show(
                     $"Thank you - your issue has been reported successfully!{Environment.NewLine}{Environment.NewLine}" +
-                    $"This is report #{reportNumber} submitted this session. Every report helps the municipality " +
+                    $"Your reference number is {issue.ReferenceNumber}. Please keep this for your records - " +
+                    "you can quote it if you follow up on this report. Every report helps the municipality " +
                     "understand and respond to what residents need.",
                     "Report Submitted",
                     MessageBoxButtons.OK,

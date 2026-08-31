@@ -17,6 +17,20 @@ namespace MunicipalServicesApp.Common
         public static readonly Color WarningColor = Color.FromArgb(200, 130, 20);
         public static readonly Color DangerColor = Color.FromArgb(190, 40, 40);
 
+        /// <summary>Dark teal used for the wizard's header/footer bars.</summary>
+        public static readonly Color HeaderBarColor = Color.FromArgb(32, 92, 111);
+
+        /// <summary>Light blue banner background used for instructional/info messages.</summary>
+        public static readonly Color InfoBannerColor = Color.FromArgb(222, 240, 247);
+        public static readonly Color InfoBannerTextColor = Color.FromArgb(20, 70, 90);
+
+        /// <summary>Step indicator states.</summary>
+        public static readonly Color StepCompletedColor = AccentColor;
+        public static readonly Color StepCurrentColor = PrimaryColor;
+        public static readonly Color StepUpcomingColor = Color.FromArgb(210, 214, 219);
+        public static readonly Color StepConnectorActiveColor = AccentColor;
+        public static readonly Color StepConnectorInactiveColor = Color.FromArgb(210, 214, 219);
+
         public static readonly Font TitleFont = new Font("Segoe UI", 18F, FontStyle.Bold);
         public static readonly Font HeadingFont = new Font("Segoe UI", 13F, FontStyle.Bold);
         public static readonly Font LabelFont = new Font("Segoe UI", 10F, FontStyle.Bold);
@@ -63,6 +77,27 @@ namespace MunicipalServicesApp.Common
             button.BackColor = Color.FromArgb(225, 228, 232);
             button.ForeColor = Color.FromArgb(130, 136, 143);
             button.Font = ButtonFont;
+        }
+
+        /// <summary>Styles a cancel/discard button (e.g. Cancel, back to Main Menu from mid-wizard).</summary>
+        public static void StyleCancelButton(Button button)
+        {
+            button.FlatStyle = FlatStyle.Flat;
+            button.FlatAppearance.BorderSize = 0;
+            button.BackColor = DangerColor;
+            button.ForeColor = Color.White;
+            button.Font = ButtonFont;
+            button.Cursor = Cursors.Hand;
+        }
+
+        /// <summary>Styles a light instructional banner label (info text above a step's main input).</summary>
+        public static void StyleInfoBanner(Label label)
+        {
+            label.BackColor = InfoBannerColor;
+            label.ForeColor = InfoBannerTextColor;
+            label.Font = BodyFont;
+            label.TextAlign = ContentAlignment.MiddleLeft;
+            label.Padding = new Padding(12, 0, 12, 0);
         }
     }
 }

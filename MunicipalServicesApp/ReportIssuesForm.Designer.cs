@@ -23,268 +23,184 @@ namespace MunicipalServicesApp
         #region Windows Form Designer generated code
 
         /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
+        /// Required method for Designer support - do not modify the contents of this
+        /// method with the code editor. This builds only the wizard's persistent
+        /// "chrome" (header bar, step content container, footer bar) - the contents of
+        /// each individual step are built programmatically in ReportIssuesForm.cs,
+        /// since the Summary/Confirmation steps must be generated dynamically anyway.
         /// </summary>
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.layoutMain = new System.Windows.Forms.TableLayoutPanel();
-            this.lblHeader = new System.Windows.Forms.Label();
-            this.lblLocation = new System.Windows.Forms.Label();
-            this.txtLocation = new System.Windows.Forms.TextBox();
-            this.lblCategory = new System.Windows.Forms.Label();
-            this.cmbCategory = new System.Windows.Forms.ComboBox();
-            this.lblDescription = new System.Windows.Forms.Label();
-            this.rtbDescription = new System.Windows.Forms.RichTextBox();
-            this.lblAttachments = new System.Windows.Forms.Label();
-            this.pnlAttachmentButtons = new System.Windows.Forms.FlowLayoutPanel();
-            this.btnAttach = new System.Windows.Forms.Button();
-            this.btnRemoveAttachment = new System.Windows.Forms.Button();
-            this.lstAttachments = new System.Windows.Forms.ListBox();
-            this.pnlProgress = new System.Windows.Forms.TableLayoutPanel();
-            this.progressReporting = new System.Windows.Forms.ProgressBar();
-            this.lblEngagement = new System.Windows.Forms.Label();
-            this.pnlActions = new System.Windows.Forms.FlowLayoutPanel();
-            this.btnSubmit = new System.Windows.Forms.Button();
+            this.layoutRoot = new System.Windows.Forms.TableLayoutPanel();
+            this.pnlHeaderBar = new System.Windows.Forms.Panel();
+            this.stepIndicator = new MunicipalServicesApp.Common.StepIndicatorControl();
+            this.lblWizardTitle = new System.Windows.Forms.Label();
+            this.pnlStepContent = new System.Windows.Forms.Panel();
+            this.pnlFooter = new System.Windows.Forms.Panel();
+            this.flpFooterRight = new System.Windows.Forms.FlowLayoutPanel();
+            this.btnNext = new System.Windows.Forms.Button();
             this.btnBack = new System.Windows.Forms.Button();
-            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.layoutMain.SuspendLayout();
-            this.pnlAttachmentButtons.SuspendLayout();
-            this.pnlProgress.SuspendLayout();
-            this.pnlActions.SuspendLayout();
+            this.btnCloseWizard = new System.Windows.Forms.Button();
+            this.btnSubmitAnother = new System.Windows.Forms.Button();
+            this.flpFooterLeft = new System.Windows.Forms.FlowLayoutPanel();
+            this.btnCancel = new System.Windows.Forms.Button();
+            this.layoutRoot.SuspendLayout();
+            this.pnlHeaderBar.SuspendLayout();
+            this.pnlFooter.SuspendLayout();
+            this.flpFooterRight.SuspendLayout();
+            this.flpFooterLeft.SuspendLayout();
             this.SuspendLayout();
             //
-            // layoutMain
+            // layoutRoot
             //
-            this.layoutMain.ColumnCount = 1;
-            this.layoutMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.layoutMain.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.layoutMain.Padding = new System.Windows.Forms.Padding(24, 16, 24, 16);
-            this.layoutMain.RowCount = 12;
-            this.layoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 44F));
-            this.layoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 22F));
-            this.layoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
-            this.layoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 22F));
-            this.layoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
-            this.layoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 22F));
-            this.layoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.layoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 22F));
-            this.layoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 44F));
-            this.layoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 80F));
-            this.layoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 60F));
-            this.layoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 54F));
-            this.layoutMain.Controls.Add(this.lblHeader, 0, 0);
-            this.layoutMain.Controls.Add(this.lblLocation, 0, 1);
-            this.layoutMain.Controls.Add(this.txtLocation, 0, 2);
-            this.layoutMain.Controls.Add(this.lblCategory, 0, 3);
-            this.layoutMain.Controls.Add(this.cmbCategory, 0, 4);
-            this.layoutMain.Controls.Add(this.lblDescription, 0, 5);
-            this.layoutMain.Controls.Add(this.rtbDescription, 0, 6);
-            this.layoutMain.Controls.Add(this.lblAttachments, 0, 7);
-            this.layoutMain.Controls.Add(this.pnlAttachmentButtons, 0, 8);
-            this.layoutMain.Controls.Add(this.lstAttachments, 0, 9);
-            this.layoutMain.Controls.Add(this.pnlProgress, 0, 10);
-            this.layoutMain.Controls.Add(this.pnlActions, 0, 11);
-            this.layoutMain.Name = "layoutMain";
+            this.layoutRoot.ColumnCount = 1;
+            this.layoutRoot.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.layoutRoot.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.layoutRoot.RowCount = 3;
+            this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 96F));
+            this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 64F));
+            this.layoutRoot.Controls.Add(this.pnlHeaderBar, 0, 0);
+            this.layoutRoot.Controls.Add(this.pnlStepContent, 0, 1);
+            this.layoutRoot.Controls.Add(this.pnlFooter, 0, 2);
+            this.layoutRoot.Name = "layoutRoot";
             //
-            // lblHeader
+            // pnlHeaderBar
             //
-            this.lblHeader.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblHeader.Name = "lblHeader";
-            this.lblHeader.Text = "Report an Issue";
-            this.lblHeader.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.pnlHeaderBar.Controls.Add(this.stepIndicator);
+            this.pnlHeaderBar.Controls.Add(this.lblWizardTitle);
+            this.pnlHeaderBar.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pnlHeaderBar.Name = "pnlHeaderBar";
             //
-            // lblLocation
+            // stepIndicator
             //
-            this.lblLocation.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblLocation.Name = "lblLocation";
-            this.lblLocation.Text = "Location *";
-            this.lblLocation.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
+            this.stepIndicator.CurrentStepIndex = 0;
+            this.stepIndicator.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.stepIndicator.Name = "stepIndicator";
+            this.stepIndicator.StepLabels = new string[0];
             //
-            // txtLocation
+            // lblWizardTitle
             //
-            this.txtLocation.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.txtLocation.MaxLength = 150;
-            this.txtLocation.Name = "txtLocation";
-            this.toolTip1.SetToolTip(this.txtLocation, "e.g. street address, suburb, or nearest landmark.");
-            this.txtLocation.TextChanged += new System.EventHandler(this.InputChanged);
+            this.lblWizardTitle.Dock = System.Windows.Forms.DockStyle.Top;
+            this.lblWizardTitle.Height = 28;
+            this.lblWizardTitle.Name = "lblWizardTitle";
+            this.lblWizardTitle.Text = "Report an Issue";
+            this.lblWizardTitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             //
-            // lblCategory
+            // pnlStepContent
             //
-            this.lblCategory.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblCategory.Name = "lblCategory";
-            this.lblCategory.Text = "Category *";
-            this.lblCategory.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
+            this.pnlStepContent.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pnlStepContent.Name = "pnlStepContent";
             //
-            // cmbCategory
+            // pnlFooter
             //
-            this.cmbCategory.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.cmbCategory.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbCategory.Items.AddRange(new object[] {
-            "Sanitation",
-            "Roads",
-            "Utilities",
-            "Electricity",
-            "Water",
-            "Other"});
-            this.cmbCategory.Name = "cmbCategory";
-            this.cmbCategory.SelectedIndexChanged += new System.EventHandler(this.InputChanged);
+            this.pnlFooter.Controls.Add(this.flpFooterRight);
+            this.pnlFooter.Controls.Add(this.flpFooterLeft);
+            this.pnlFooter.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pnlFooter.Name = "pnlFooter";
             //
-            // lblDescription
+            // flpFooterRight
             //
-            this.lblDescription.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblDescription.Name = "lblDescription";
-            this.lblDescription.Text = "Description *";
-            this.lblDescription.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
+            this.flpFooterRight.Controls.Add(this.btnNext);
+            this.flpFooterRight.Controls.Add(this.btnBack);
+            this.flpFooterRight.Controls.Add(this.btnCloseWizard);
+            this.flpFooterRight.Controls.Add(this.btnSubmitAnother);
+            this.flpFooterRight.Dock = System.Windows.Forms.DockStyle.Right;
+            this.flpFooterRight.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
+            this.flpFooterRight.Name = "flpFooterRight";
+            this.flpFooterRight.Padding = new System.Windows.Forms.Padding(0, 14, 16, 14);
+            this.flpFooterRight.WrapContents = false;
             //
-            // rtbDescription
+            // btnNext
             //
-            this.rtbDescription.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.rtbDescription.Name = "rtbDescription";
-            this.toolTip1.SetToolTip(this.rtbDescription, "Describe the issue in as much detail as possible.");
-            this.rtbDescription.TextChanged += new System.EventHandler(this.InputChanged);
-            //
-            // lblAttachments
-            //
-            this.lblAttachments.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblAttachments.Name = "lblAttachments";
-            this.lblAttachments.Text = "Attachments (optional)";
-            this.lblAttachments.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
-            //
-            // pnlAttachmentButtons
-            //
-            this.pnlAttachmentButtons.Controls.Add(this.btnAttach);
-            this.pnlAttachmentButtons.Controls.Add(this.btnRemoveAttachment);
-            this.pnlAttachmentButtons.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnlAttachmentButtons.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
-            this.pnlAttachmentButtons.Name = "pnlAttachmentButtons";
-            this.pnlAttachmentButtons.Padding = new System.Windows.Forms.Padding(0, 4, 0, 4);
-            this.pnlAttachmentButtons.WrapContents = false;
-            //
-            // btnAttach
-            //
-            this.btnAttach.AutoSize = false;
-            this.btnAttach.Height = 32;
-            this.btnAttach.Margin = new System.Windows.Forms.Padding(0, 0, 10, 0);
-            this.btnAttach.Name = "btnAttach";
-            this.btnAttach.Text = "Add Attachment";
-            this.btnAttach.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.btnAttach.UseVisualStyleBackColor = false;
-            this.btnAttach.Width = 150;
-            this.btnAttach.Click += new System.EventHandler(this.btnAttach_Click);
-            //
-            // btnRemoveAttachment
-            //
-            this.btnRemoveAttachment.AutoSize = false;
-            this.btnRemoveAttachment.Height = 32;
-            this.btnRemoveAttachment.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.btnRemoveAttachment.Name = "btnRemoveAttachment";
-            this.btnRemoveAttachment.Text = "Remove Selected";
-            this.btnRemoveAttachment.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.btnRemoveAttachment.UseVisualStyleBackColor = false;
-            this.btnRemoveAttachment.Width = 140;
-            this.btnRemoveAttachment.Click += new System.EventHandler(this.btnRemoveAttachment_Click);
-            //
-            // lstAttachments
-            //
-            this.lstAttachments.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lstAttachments.Name = "lstAttachments";
-            this.lstAttachments.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
-            this.toolTip1.SetToolTip(this.lstAttachments, "Files attached to this report. Select one or more and click Remove Selected to undo.");
-            //
-            // pnlProgress
-            //
-            this.pnlProgress.ColumnCount = 1;
-            this.pnlProgress.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.pnlProgress.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnlProgress.RowCount = 2;
-            this.pnlProgress.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 22F));
-            this.pnlProgress.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.pnlProgress.Controls.Add(this.progressReporting, 0, 0);
-            this.pnlProgress.Controls.Add(this.lblEngagement, 0, 1);
-            this.pnlProgress.Name = "pnlProgress";
-            //
-            // progressReporting
-            //
-            this.progressReporting.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.progressReporting.Margin = new System.Windows.Forms.Padding(0, 2, 0, 2);
-            this.progressReporting.Maximum = 100;
-            this.progressReporting.Name = "progressReporting";
-            //
-            // lblEngagement
-            //
-            this.lblEngagement.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblEngagement.Name = "lblEngagement";
-            this.lblEngagement.Text = "Let\'s get started - tell us where the issue is.";
-            this.lblEngagement.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            //
-            // pnlActions
-            //
-            this.pnlActions.Controls.Add(this.btnSubmit);
-            this.pnlActions.Controls.Add(this.btnBack);
-            this.pnlActions.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnlActions.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
-            this.pnlActions.Name = "pnlActions";
-            this.pnlActions.Padding = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            //
-            // btnSubmit
-            //
-            this.btnSubmit.Height = 38;
-            this.btnSubmit.Margin = new System.Windows.Forms.Padding(10, 0, 0, 0);
-            this.btnSubmit.Name = "btnSubmit";
-            this.btnSubmit.Text = "Submit";
-            this.btnSubmit.UseVisualStyleBackColor = false;
-            this.btnSubmit.Width = 140;
-            this.btnSubmit.Click += new System.EventHandler(this.btnSubmit_Click);
+            this.btnNext.Height = 36;
+            this.btnNext.Margin = new System.Windows.Forms.Padding(8, 0, 0, 0);
+            this.btnNext.Name = "btnNext";
+            this.btnNext.Text = "Next";
+            this.btnNext.UseVisualStyleBackColor = false;
+            this.btnNext.Width = 110;
+            this.btnNext.Click += new System.EventHandler(this.btnNext_Click);
             //
             // btnBack
             //
-            this.btnBack.Height = 38;
-            this.btnBack.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.btnBack.Height = 36;
+            this.btnBack.Margin = new System.Windows.Forms.Padding(8, 0, 0, 0);
             this.btnBack.Name = "btnBack";
-            this.btnBack.Text = "Back to Main Menu";
+            this.btnBack.Text = "Back";
             this.btnBack.UseVisualStyleBackColor = false;
-            this.btnBack.Width = 150;
+            this.btnBack.Width = 100;
             this.btnBack.Click += new System.EventHandler(this.btnBack_Click);
+            //
+            // btnCloseWizard
+            //
+            this.btnCloseWizard.Height = 36;
+            this.btnCloseWizard.Margin = new System.Windows.Forms.Padding(8, 0, 0, 0);
+            this.btnCloseWizard.Name = "btnCloseWizard";
+            this.btnCloseWizard.Text = "Close";
+            this.btnCloseWizard.UseVisualStyleBackColor = false;
+            this.btnCloseWizard.Visible = false;
+            this.btnCloseWizard.Width = 100;
+            this.btnCloseWizard.Click += new System.EventHandler(this.btnCloseWizard_Click);
+            //
+            // btnSubmitAnother
+            //
+            this.btnSubmitAnother.Height = 36;
+            this.btnSubmitAnother.Margin = new System.Windows.Forms.Padding(8, 0, 0, 0);
+            this.btnSubmitAnother.Name = "btnSubmitAnother";
+            this.btnSubmitAnother.Text = "New Report";
+            this.btnSubmitAnother.UseVisualStyleBackColor = false;
+            this.btnSubmitAnother.Visible = false;
+            this.btnSubmitAnother.Width = 120;
+            this.btnSubmitAnother.Click += new System.EventHandler(this.btnSubmitAnother_Click);
+            //
+            // flpFooterLeft
+            //
+            this.flpFooterLeft.Controls.Add(this.btnCancel);
+            this.flpFooterLeft.Dock = System.Windows.Forms.DockStyle.Left;
+            this.flpFooterLeft.Name = "flpFooterLeft";
+            this.flpFooterLeft.Padding = new System.Windows.Forms.Padding(16, 14, 0, 14);
+            //
+            // btnCancel
+            //
+            this.btnCancel.Height = 36;
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Text = "Cancel";
+            this.btnCancel.UseVisualStyleBackColor = false;
+            this.btnCancel.Width = 100;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             //
             // ReportIssuesForm
             //
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(640, 640);
-            this.Controls.Add(this.layoutMain);
-            this.MinimumSize = new System.Drawing.Size(560, 560);
+            this.ClientSize = new System.Drawing.Size(760, 680);
+            this.Controls.Add(this.layoutRoot);
+            this.MinimumSize = new System.Drawing.Size(680, 560);
             this.Name = "ReportIssuesForm";
             this.Text = "Municipal Services App - Report Issues";
-            this.pnlAttachmentButtons.ResumeLayout(false);
-            this.pnlProgress.ResumeLayout(false);
-            this.pnlActions.ResumeLayout(false);
-            this.layoutMain.ResumeLayout(false);
+            this.pnlHeaderBar.ResumeLayout(false);
+            this.pnlFooter.ResumeLayout(false);
+            this.flpFooterRight.ResumeLayout(false);
+            this.flpFooterLeft.ResumeLayout(false);
+            this.layoutRoot.ResumeLayout(false);
             this.ResumeLayout(false);
         }
 
         #endregion
 
-        private System.Windows.Forms.ToolTip toolTip1;
-        private System.Windows.Forms.TableLayoutPanel layoutMain;
-        private System.Windows.Forms.Label lblHeader;
-        private System.Windows.Forms.Label lblLocation;
-        private System.Windows.Forms.TextBox txtLocation;
-        private System.Windows.Forms.Label lblCategory;
-        private System.Windows.Forms.ComboBox cmbCategory;
-        private System.Windows.Forms.Label lblDescription;
-        private System.Windows.Forms.RichTextBox rtbDescription;
-        private System.Windows.Forms.Label lblAttachments;
-        private System.Windows.Forms.FlowLayoutPanel pnlAttachmentButtons;
-        private System.Windows.Forms.Button btnAttach;
-        private System.Windows.Forms.Button btnRemoveAttachment;
-        private System.Windows.Forms.ListBox lstAttachments;
-        private System.Windows.Forms.TableLayoutPanel pnlProgress;
-        private System.Windows.Forms.ProgressBar progressReporting;
-        private System.Windows.Forms.Label lblEngagement;
-        private System.Windows.Forms.FlowLayoutPanel pnlActions;
-        private System.Windows.Forms.Button btnSubmit;
+        private System.Windows.Forms.TableLayoutPanel layoutRoot;
+        private System.Windows.Forms.Panel pnlHeaderBar;
+        private MunicipalServicesApp.Common.StepIndicatorControl stepIndicator;
+        private System.Windows.Forms.Label lblWizardTitle;
+        private System.Windows.Forms.Panel pnlStepContent;
+        private System.Windows.Forms.Panel pnlFooter;
+        private System.Windows.Forms.FlowLayoutPanel flpFooterRight;
+        private System.Windows.Forms.Button btnNext;
         private System.Windows.Forms.Button btnBack;
+        private System.Windows.Forms.Button btnCloseWizard;
+        private System.Windows.Forms.Button btnSubmitAnother;
+        private System.Windows.Forms.FlowLayoutPanel flpFooterLeft;
+        private System.Windows.Forms.Button btnCancel;
     }
 }

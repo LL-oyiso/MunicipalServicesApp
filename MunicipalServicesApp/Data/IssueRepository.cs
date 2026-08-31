@@ -26,7 +26,18 @@ namespace MunicipalServicesApp.Data
                 throw new ArgumentNullException(nameof(issue));
             }
 
+            issue.ReferenceNumber = GenerateReferenceNumber();
             _issues.Add(issue);
+        }
+
+        /// <summary>
+        /// Builds a human-friendly reference number, e.g. "REQ-2026-0001", combining
+        /// the current year with a zero-padded, 1-based sequence number.
+        /// </summary>
+        private static string GenerateReferenceNumber()
+        {
+            var sequence = _issues.Count + 1;
+            return $"REQ-{DateTime.Now.Year}-{sequence:D4}";
         }
     }
 }
