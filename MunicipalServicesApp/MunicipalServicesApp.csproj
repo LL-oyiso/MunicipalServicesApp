@@ -50,6 +50,7 @@
     <Compile Include="Data\IssueRepository.cs" />
     <Compile Include="Common\AppTheme.cs" />
     <Compile Include="Common\StepIndicatorControl.cs" />
+    <Compile Include="Common\MenuCardControl.cs" />
     <Compile Include="MainMenuForm.cs">
       <SubType>Form</SubType>
     </Compile>

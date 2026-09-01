@@ -21,21 +21,20 @@ namespace MunicipalServicesApp
         {
             AppTheme.ApplyFormDefaults(this);
 
-            lblTitle.Font = AppTheme.TitleFont;
-            lblTitle.ForeColor = AppTheme.PrimaryColor;
+            pnlHeaderBar.BackColor = AppTheme.HeaderBarColor;
+            lblAppTitle.Font = AppTheme.TitleFont;
+            lblAppTitle.ForeColor = System.Drawing.Color.White;
+
+            pnlContent.BackColor = AppTheme.BackgroundColor;
 
             lblSubtitle.Font = AppTheme.BodyFont;
             lblSubtitle.ForeColor = AppTheme.SecondaryColor;
 
-            lblFooter.Font = AppTheme.SmallFont;
-            lblFooter.ForeColor = AppTheme.SecondaryColor;
-
-            AppTheme.StylePrimaryButton(btnReportIssues);
-            AppTheme.StyleDisabledButton(btnLocalEvents);
-            AppTheme.StyleDisabledButton(btnServiceStatus);
+            lblFooterNote.Font = AppTheme.SmallFont;
+            lblFooterNote.ForeColor = AppTheme.SecondaryColor;
         }
 
-        private void btnReportIssues_Click(object sender, EventArgs e)
+        private void cardReportIssues_Click(object sender, EventArgs e)
         {
             try
             {
