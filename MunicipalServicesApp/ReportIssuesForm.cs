@@ -83,6 +83,14 @@ namespace MunicipalServicesApp
         private Button btnAttach;
         private Button btnRemoveAttachment;
         private Label lblAttachmentHint;
+        private PictureBox picAttachmentPreview;
+        private Label lblAttachmentPreviewHint;
+
+        /// <summary>File extensions the attachment preview knows how to render as an image.</summary>
+        private static readonly string[] PreviewableImageExtensions =
+        {
+            ".jpg", ".jpeg", ".png", ".bmp", ".gif"
+        };
         private TextBox txtFirstName;
         private TextBox txtSurname;
         private TextBox txtEmail;
@@ -418,8 +426,50 @@ namespace MunicipalServicesApp
                 BorderStyle = BorderStyle.FixedSingle,
                 Dock = DockStyle.Fill,
                 Font = AppTheme.BodyFont,
+                Margin = new Padding(0, 0, 10, 0),
                 SelectionMode = SelectionMode.MultiExtended
             };
+            lstAttachments.SelectedIndexChanged += lstAttachments_SelectedIndexChanged;
+
+            picAttachmentPreview = new PictureBox
+            {
+                BackColor = Color.White,
+                Dock = DockStyle.Fill,
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Visible = false
+            };
+
+            lblAttachmentPreviewHint = new Label
+            {
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                Font = AppTheme.SmallFont,
+                ForeColor = AppTheme.SecondaryColor,
+                Text = "Select a file to preview it here.",
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            var pnlAttachmentPreview = new Panel
+            {
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle,
+                Dock = DockStyle.Fill
+            };
+            pnlAttachmentPreview.Controls.Add(picAttachmentPreview);
+            pnlAttachmentPreview.Controls.Add(lblAttachmentPreviewHint);
+
+            var attachmentContentGrid = new TableLayoutPanel
+            {
+                ColumnCount = 2,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0),
+                RowCount = 1
+            };
+            attachmentContentGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55F));
+            attachmentContentGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F));
+            attachmentContentGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            attachmentContentGrid.Controls.Add(lstAttachments, 0, 0);
+            attachmentContentGrid.Controls.Add(pnlAttachmentPreview, 1, 0);
 
             lblAttachmentHint = CreateHintLabel(string.Empty);
 
@@ -430,7 +480,7 @@ namespace MunicipalServicesApp
 
             body.Controls.Add(flpAttachmentButtons, 0, 0);
             body.Controls.Add(CreateFieldLabel("Attached files"), 0, 1);
-            body.Controls.Add(lstAttachments, 0, 2);
+            body.Controls.Add(attachmentContentGrid, 0, 2);
             body.Controls.Add(lblAttachmentHint, 0, 3);
 
             UpdateAttachmentHint();
@@ -1044,6 +1094,12 @@ namespace MunicipalServicesApp
                         }
 
                         UpdateAttachmentHint();
+
+                        if (lstAttachments.Items.Count > 0)
+                        {
+                            lstAttachments.ClearSelected();
+                            lstAttachments.SelectedIndex = lstAttachments.Items.Count - 1;
+                        }
                     }
                 }
             }
@@ -1078,6 +1134,7 @@ namespace MunicipalServicesApp
             }
 
             UpdateAttachmentHint();
+            UpdateAttachmentPreview();
         }
 
         private void UpdateAttachmentHint()
@@ -1093,6 +1150,71 @@ namespace MunicipalServicesApp
                 ? "1 file attached."
                 : _attachedFiles.Count + " files attached.";
             lblAttachmentHint.ForeColor = AppTheme.SuccessColor;
+        }
+
+        private void lstAttachments_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateAttachmentPreview();
+        }
+
+        /// <summary>
+        /// Shows a live preview of the selected attachment so residents get visual
+        /// confirmation of what they are submitting, rather than just a file name.
+        /// Images are rendered directly; other file types fall back to a short
+        /// explanatory message since WinForms has no built-in document preview.
+        /// </summary>
+        private void UpdateAttachmentPreview()
+        {
+            if (lstAttachments.SelectedIndices.Count == 0)
+            {
+                ClearAttachmentPreview("Select a file to preview it here.");
+                return;
+            }
+
+            if (lstAttachments.SelectedIndices.Count > 1)
+            {
+                ClearAttachmentPreview("Select a single file to preview it.");
+                return;
+            }
+
+            var filePath = _attachedFiles[lstAttachments.SelectedIndices[0]];
+            var extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+            if (!PreviewableImageExtensions.Contains(extension))
+            {
+                var friendlyExtension = extension.Length > 1 ? extension.Substring(1).ToUpperInvariant() : "This";
+                ClearAttachmentPreview(friendlyExtension + " files can't be previewed here, but they will still be attached to your report.");
+                return;
+            }
+
+            try
+            {
+                // Read into a byte array first (rather than Image.FromFile) so the
+                // preview never keeps the original file locked.
+                var bytes = File.ReadAllBytes(filePath);
+                using (var stream = new MemoryStream(bytes))
+                using (var loadedImage = Image.FromStream(stream))
+                {
+                    picAttachmentPreview.Image?.Dispose();
+                    picAttachmentPreview.Image = new Bitmap(loadedImage);
+                }
+
+                picAttachmentPreview.Visible = true;
+                lblAttachmentPreviewHint.Visible = false;
+            }
+            catch (Exception)
+            {
+                ClearAttachmentPreview("This image could not be previewed, but it will still be attached to your report.");
+            }
+        }
+
+        private void ClearAttachmentPreview(string message)
+        {
+            picAttachmentPreview.Image?.Dispose();
+            picAttachmentPreview.Image = null;
+            picAttachmentPreview.Visible = false;
+            lblAttachmentPreviewHint.Text = message;
+            lblAttachmentPreviewHint.Visible = true;
         }
 
         private void flpSummary_Resize(object sender, EventArgs e)
@@ -1343,6 +1465,7 @@ namespace MunicipalServicesApp
 
             UpdateDescriptionCount();
             UpdateAttachmentHint();
+            ClearAttachmentPreview("Select a file to preview it here.");
         }
 
         #endregion
