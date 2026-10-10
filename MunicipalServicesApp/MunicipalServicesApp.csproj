@@ -51,6 +51,7 @@
     <Compile Include="Models\Announcement.cs" />
     <Compile Include="Data\IssueRepository.cs" />
     <Compile Include="Data\EventsRepository.cs" />
+    <Compile Include="Data\RecommendationEngine.cs" />
     <Compile Include="Common\AppTheme.cs" />
     <Compile Include="Common\StepIndicatorControl.cs" />
     <Compile Include="Common\MenuCardControl.cs" />
