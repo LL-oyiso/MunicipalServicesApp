@@ -47,10 +47,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\Issue.cs" />
+    <Compile Include="Models\Event.cs" />
+    <Compile Include="Models\Announcement.cs" />
     <Compile Include="Data\IssueRepository.cs" />
     <Compile Include="Common\AppTheme.cs" />
     <Compile Include="Common\StepIndicatorControl.cs" />
     <Compile Include="Common\MenuCardControl.cs" />
+    <Compile Include="Common\PriorityQueue.cs" />
     <Compile Include="MainMenuForm.cs">
       <SubType>Form</SubType>
     </Compile>
