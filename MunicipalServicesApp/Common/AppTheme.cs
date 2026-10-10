@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace MunicipalServicesApp.Common
@@ -37,6 +39,73 @@ namespace MunicipalServicesApp.Common
         public static readonly Font BodyFont = new Font("Segoe UI", 10F);
         public static readonly Font ButtonFont = new Font("Segoe UI", 11F, FontStyle.Bold);
         public static readonly Font SmallFont = new Font("Segoe UI", 9F);
+
+        /// <summary>Consistent accent colour per event/announcement category (Local Events and Announcements feature).</summary>
+        private static readonly Dictionary<string, Color> CategoryColors = new Dictionary<string, Color>(System.StringComparer.OrdinalIgnoreCase)
+        {
+            { "Community", Color.FromArgb(0, 120, 215) },
+            { "Sports and Recreation", Color.FromArgb(40, 140, 70) },
+            { "Arts and Culture", Color.FromArgb(155, 89, 182) },
+            { "Health and Safety", Color.FromArgb(190, 40, 40) },
+            { "Municipal Notices", Color.FromArgb(200, 130, 20) },
+            { "Youth and Education", Color.FromArgb(0, 150, 150) },
+            { "Environment", Color.FromArgb(76, 153, 0) }
+        };
+
+        /// <summary>Looks up a category's accent colour, falling back to <see cref="AccentColor"/> for unknown ones.</summary>
+        public static Color GetCategoryColor(string category)
+        {
+            return !string.IsNullOrWhiteSpace(category) && CategoryColors.TryGetValue(category, out var color)
+                ? color
+                : AccentColor;
+        }
+
+        /// <summary>Builds a rounded-rectangle path, shared by the custom-drawn card controls.</summary>
+        public static GraphicsPath RoundedRect(Rectangle bounds, int radius)
+        {
+            var diameter = radius * 2;
+            var path = new GraphicsPath();
+            var arc = new Rectangle(bounds.Location, new Size(diameter, diameter));
+
+            path.AddArc(arc, 180, 90);
+            arc.X = bounds.Right - diameter;
+            path.AddArc(arc, 270, 90);
+            arc.Y = bounds.Bottom - diameter;
+            path.AddArc(arc, 0, 90);
+            arc.X = bounds.Left;
+            path.AddArc(arc, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+
+        /// <summary>
+        /// Draws a small filled rounded "pill" badge (e.g. a category or priority tag)
+        /// with white, bold, centred text at the given top-left location, and returns
+        /// the size it occupied so callers can lay out whatever comes next.
+        /// </summary>
+        public static SizeF DrawPill(Graphics g, string text, PointF location, Color fillColor, float height = 20F)
+        {
+            using (var font = new Font("Segoe UI", 8F, FontStyle.Bold))
+            {
+                var textSize = g.MeasureString(text, font);
+                var width = textSize.Width + 16;
+                var rect = new RectangleF(location.X, location.Y, width, height);
+
+                using (var path = RoundedRect(Rectangle.Round(rect), (int)(height / 2)))
+                using (var brush = new SolidBrush(fillColor))
+                {
+                    g.FillPath(brush, path);
+                }
+
+                using (var textBrush = new SolidBrush(Color.White))
+                using (var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                {
+                    g.DrawString(text, font, textBrush, rect, format);
+                }
+
+                return new SizeF(width, height);
+            }
+        }
 
         /// <summary>Applies the common background/font defaults every form should share.</summary>
         public static void ApplyFormDefaults(Form form)

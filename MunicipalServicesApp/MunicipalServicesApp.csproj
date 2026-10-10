@@ -56,6 +56,8 @@
     <Compile Include="Common\StepIndicatorControl.cs" />
     <Compile Include="Common\MenuCardControl.cs" />
     <Compile Include="Common\PriorityQueue.cs" />
+    <Compile Include="Common\EventCardControl.cs" />
+    <Compile Include="Common\AnnouncementCardControl.cs" />
     <Compile Include="MainMenuForm.cs">
       <SubType>Form</SubType>
     </Compile>
