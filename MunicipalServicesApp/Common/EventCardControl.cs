@@ -54,11 +54,30 @@ namespace MunicipalServicesApp.Common
             set { _eventDate = value; Invalidate(); }
         }
 
-        /// <summary>True to show the accent "Recommended" styling and reason line.</summary>
+        /// <summary>Card height for the normal variant - see IsRecommended for why the recommended variant is taller.</summary>
+        private const int DefaultHeight = 172;
+
+        /// <summary>
+        /// Extra height reserved at the top of the card for the "RECOMMENDED" badge's
+        /// own row, so it never has to share space with (and get drawn on top of) the
+        /// title - which is exactly what happened when the badge instead stole width
+        /// from the title's wrap column: long single words like "Maintenance" or
+        /// "Unveiling" couldn't fit the narrowed column at all, forcing GDI+ to break
+        /// them mid-word, and the overflow then got clipped by the title's capped
+        /// height.
+        /// </summary>
+        private const int RecommendedTopOffset = 26;
+
+        /// <summary>True to show the accent "Recommended" styling, badge row and reason line.</summary>
         public bool IsRecommended
         {
             get => _isRecommended;
-            set { _isRecommended = value; Invalidate(); }
+            set
+            {
+                _isRecommended = value;
+                Height = DefaultHeight + (_isRecommended ? RecommendedTopOffset : 0);
+                Invalidate();
+            }
         }
 
         /// <summary>Plain-language reason shown at the bottom when <see cref="IsRecommended"/> is true.</summary>
@@ -74,7 +93,7 @@ namespace MunicipalServicesApp.Common
             BackColor = Color.White;
             Cursor = Cursors.Default;
             Margin = new Padding(8);
-            Size = new Size(300, 158);
+            Size = new Size(300, DefaultHeight);
         }
 
         protected override void OnMouseEnter(EventArgs e)
@@ -122,24 +141,42 @@ namespace MunicipalServicesApp.Common
             const int padding = 14;
             const int dateBadgeSize = 50;
 
-            var dateBadgeRect = new Rectangle(padding, padding, dateBadgeSize, dateBadgeSize);
-            DrawDateBadge(g, dateBadgeRect);
+            // When recommended, everything below (date tile, title, ...) shifts down
+            // by RecommendedTopOffset, leaving a dedicated row at the very top just
+            // for the badge - rather than squeezing the title's own wrap width to
+            // share that row with it (see RecommendedTopOffset for why that fell over).
+            var topOffset = _isRecommended ? RecommendedTopOffset : 0;
 
             if (_isRecommended)
             {
-                AppTheme.DrawPill(g, "RECOMMENDED", new PointF(Width - padding - 92, padding - 4), AppTheme.AccentColor);
+                using (var badgeFont = new Font("Segoe UI", 8F, FontStyle.Bold))
+                {
+                    var badgeWidth = g.MeasureString("RECOMMENDED", badgeFont).Width + 16;
+                    AppTheme.DrawPill(g, "RECOMMENDED", new PointF(Width - padding - badgeWidth, padding - 4), AppTheme.AccentColor);
+                }
             }
+
+            var dateBadgeRect = new Rectangle(padding, padding + topOffset, dateBadgeSize, dateBadgeSize);
+            DrawDateBadge(g, dateBadgeRect);
 
             var textLeft = dateBadgeRect.Right + 12;
             var textWidth = Width - textLeft - padding;
 
+            // Measure the title's actual wrapped height (capped at two lines) rather
+            // than assuming a fixed one-line offset, so longer titles that wrap to a
+            // second line push the category pill down instead of overlapping it.
+            var singleLineHeight = AppTheme.LabelFont.GetHeight(g);
+            var titleMaxHeight = singleLineHeight * 2 + 4;
+            var titleSize = g.MeasureString(_title, AppTheme.LabelFont, Math.Max(1, (int)textWidth));
+            var titleHeight = Math.Min(Math.Max(titleSize.Height, singleLineHeight), titleMaxHeight);
+
             using (var titleBrush = new SolidBrush(AppTheme.PrimaryColor))
             {
-                var titleRect = new RectangleF(textLeft, padding - 2, textWidth, 36);
+                var titleRect = new RectangleF(textLeft, padding - 2 + topOffset, textWidth, titleHeight);
                 g.DrawString(_title, AppTheme.LabelFont, titleBrush, titleRect);
             }
 
-            var categoryTop = padding + 24;
+            var categoryTop = padding - 2 + topOffset + titleHeight + 4;
             AppTheme.DrawPill(g, _category, new PointF(textLeft, categoryTop), AppTheme.GetCategoryColor(_category));
 
             var locationTop = categoryTop + 26;
