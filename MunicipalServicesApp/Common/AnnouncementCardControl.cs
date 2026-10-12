@@ -64,7 +64,7 @@ namespace MunicipalServicesApp.Common
             BackColor = Color.White;
             Cursor = Cursors.Default;
             Margin = new Padding(8);
-            Size = new Size(320, 140);
+            Size = new Size(320, 148);
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -95,9 +95,17 @@ namespace MunicipalServicesApp.Common
             const int padding = 14;
             var titleWidth = Width - padding * 2 - (isUrgent ? 70 : 0);
 
+            // Measure the title's actual wrapped height (capped at two lines) rather
+            // than assuming a fixed one-line offset, so longer titles that wrap to a
+            // second line push the category pill down instead of overlapping it.
+            var singleLineHeight = AppTheme.LabelFont.GetHeight(g);
+            var titleMaxHeight = singleLineHeight * 2 + 4;
+            var titleSize = g.MeasureString(_title, AppTheme.LabelFont, Math.Max(1, (int)titleWidth));
+            var titleHeight = Math.Min(Math.Max(titleSize.Height, singleLineHeight), titleMaxHeight);
+
             using (var titleBrush = new SolidBrush(AppTheme.PrimaryColor))
             {
-                var titleRect = new RectangleF(padding, padding - 2, titleWidth, 24);
+                var titleRect = new RectangleF(padding, padding - 2, titleWidth, titleHeight);
                 g.DrawString(_title, AppTheme.LabelFont, titleBrush, titleRect);
             }
 
@@ -106,7 +114,7 @@ namespace MunicipalServicesApp.Common
                 AppTheme.DrawPill(g, "URGENT", new PointF(Width - padding - 62, padding - 2), AppTheme.DangerColor);
             }
 
-            var categoryTop = padding + 26;
+            var categoryTop = padding - 2 + titleHeight + 4;
             AppTheme.DrawPill(g, _category, new PointF(padding, categoryTop), AppTheme.GetCategoryColor(_category));
 
             var messageTop = categoryTop + 26;

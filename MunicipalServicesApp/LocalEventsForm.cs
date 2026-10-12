@@ -58,6 +58,12 @@ namespace MunicipalServicesApp
         private FlowLayoutPanel _flpEventsGallery;
         private Label _lblEventsResultsSummary;
 
+        // Recommendations (search-history driven)
+        private Panel _pnlRecommendationsSection;
+        private FlowLayoutPanel _flpRecommendationsGallery;
+        private Label _lblRecommendationsSummary;
+        private Button _btnPreviousSearch;
+
         // Announcements gallery
         private FlowLayoutPanel _flpAnnouncementsGallery;
         private Label _lblAnnouncementsResultsSummary;
@@ -76,6 +82,13 @@ namespace MunicipalServicesApp
         public LocalEventsForm()
         {
             InitializeComponent();
+
+            // Opens maximized rather than at the Designer's fixed 1000x700 - there's
+            // simply too much content (filter bar, two full galleries, submit form,
+            // pending review) to view comfortably at a fixed size, and the resident
+            // shouldn't have to remember to maximize it by hand every time.
+            WindowState = FormWindowState.Maximized;
+
             ApplyTheme();
             BuildContent();
             ExecuteSearch(recordSearch: false);
@@ -88,7 +101,7 @@ namespace MunicipalServicesApp
             // manually at all.
             Shown += (s, e) =>
             {
-                ForceScrollableRelayout(_scrollEventsPanel, _flpEventsGallery);
+                ForceScrollableRelayout(_scrollEventsPanel, _flpEventsGallery, _flpRecommendationsGallery);
                 ForceScrollableRelayout(_scrollAnnouncementsPanel, _flpAnnouncementsGallery);
             };
         }
@@ -226,22 +239,27 @@ namespace MunicipalServicesApp
             }
             else
             {
-                ForceScrollableRelayout(_scrollEventsPanel, _flpEventsGallery);
+                ForceScrollableRelayout(_scrollEventsPanel, _flpEventsGallery, _flpRecommendationsGallery);
             }
         }
 
         /// <summary>
-        /// Recomputes the gallery's real wrapped height (see FitFlowPanelHeight) and
-        /// then makes the containing AutoScroll panel re-layout against that now
-        ///-correct height. Safe to call repeatedly (on tab switch, on gallery
-        /// refresh, and once more after the form is actually Shown) since it's cheap
-        /// and idempotent.
+        /// Recomputes each given gallery's real wrapped height (see
+        /// FitFlowPanelHeight) and then makes the containing AutoScroll panel
+        /// re-layout against those now-correct heights. Safe to call repeatedly (on
+        /// tab switch, on gallery refresh, and once more after the form is actually
+        /// Shown) since it's cheap and idempotent. Accepts multiple galleries since
+        /// the Events tab stacks two of them (events, then recommendations) inside
+        /// the same scroll panel.
         /// </summary>
-        private static void ForceScrollableRelayout(Panel scrollPanel, FlowLayoutPanel gallery)
+        private static void ForceScrollableRelayout(Panel scrollPanel, params FlowLayoutPanel[] galleries)
         {
-            if (gallery != null)
+            foreach (var gallery in galleries)
             {
-                FitFlowPanelHeight(gallery);
+                if (gallery != null)
+                {
+                    FitFlowPanelHeight(gallery);
+                }
             }
 
             scrollPanel?.PerformLayout();
@@ -300,7 +318,11 @@ namespace MunicipalServicesApp
             flp.Height = totalHeight;
         }
 
-        /// <summary>Events tab: the filter bar (Dock=Top) plus a scrollable panel containing only the events gallery.</summary>
+        /// <summary>
+        /// Events tab: the filter bar (Dock=Top) plus a scrollable panel containing
+        /// the events gallery, then the search-history-driven recommendations
+        /// section, in that reading order top to bottom.
+        /// </summary>
         private Panel BuildEventsTabPanel()
         {
             var tabPanel = new Panel { Dock = DockStyle.Fill };
@@ -314,7 +336,15 @@ namespace MunicipalServicesApp
                 BackColor = AppTheme.BackgroundColor,
                 Padding = new Padding(24, 16, 8, 24)
             };
-            scrollPanel.Controls.Add(BuildEventsSection());
+
+            var recommendationsSection = BuildRecommendationsSection();
+            var eventsSection = BuildEventsSection();
+
+            // Added in reverse visual order (see BuildAnnouncementsTabPanel for why):
+            // bottom-most section added first, top-most added last, so it reads
+            // Upcoming Events -> Recommended For You from top to bottom.
+            scrollPanel.Controls.Add(recommendationsSection);
+            scrollPanel.Controls.Add(eventsSection);
             _scrollEventsPanel = scrollPanel;
 
             // scrollPanel (Fill) added first, filterBar (Top) added last - same
@@ -529,6 +559,158 @@ namespace MunicipalServicesApp
             section.Controls.Add(header);
 
             return section;
+        }
+
+        /// <summary>
+        /// Personalised recommendations, ranked by how often the resident has
+        /// searched each category this session (see RecommendationEngine). Hidden
+        /// entirely until there is at least one real search to base them on, and
+        /// always excludes whatever the main gallery above is currently showing -
+        /// otherwise, before any search, this would just be duplicating the same
+        /// "popular upcoming events" already visible above it. Also hosts the
+        /// "Previous Search" button, which pops the most recent search off the
+        /// engine's history stack and re-applies it to the filter bar - a LIFO "step
+        /// back through what I searched" action, which is why it lives here next to
+        /// the feature it drives rather than in the filter bar itself.
+        /// </summary>
+        private Panel BuildRecommendationsSection()
+        {
+            var section = new Panel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Padding = new Padding(0, 0, 0, 24),
+                Visible = false
+            };
+            _pnlRecommendationsSection = section;
+
+            var header = new Label
+            {
+                Text = "Recommended For You",
+                Dock = DockStyle.Top,
+                Height = 30,
+                Font = AppTheme.HeadingFont,
+                ForeColor = AppTheme.PrimaryColor
+            };
+
+            _lblRecommendationsSummary = new Label
+            {
+                Dock = DockStyle.Top,
+                Height = 22,
+                Font = AppTheme.SmallFont,
+                ForeColor = AppTheme.SecondaryColor
+            };
+
+            var actionRow = new Panel { Dock = DockStyle.Top, Height = 42 };
+            _btnPreviousSearch = new Button
+            {
+                Text = "Previous Search",
+                Width = 150,
+                Height = 32,
+                Location = new Point(0, 6),
+                Anchor = AnchorStyles.Left | AnchorStyles.Top
+            };
+            AppTheme.StyleSecondaryButton(_btnPreviousSearch);
+            _btnPreviousSearch.Click += btnPreviousSearch_Click;
+            actionRow.Controls.Add(_btnPreviousSearch);
+
+            _flpRecommendationsGallery = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                // Intentionally not AutoSize - see FitFlowPanelHeight for why.
+                WrapContents = true,
+                FlowDirection = FlowDirection.LeftToRight
+            };
+
+            // Added in reverse visual order (see BuildAnnouncementsTabPanel for why):
+            // gallery first, action row next, summary next, header last.
+            section.Controls.Add(_flpRecommendationsGallery);
+            section.Controls.Add(actionRow);
+            section.Controls.Add(_lblRecommendationsSummary);
+            section.Controls.Add(header);
+
+            return section;
+        }
+
+        private void btnPreviousSearch_Click(object sender, EventArgs e)
+        {
+            var previous = _recommendationEngine.PopLastSearch();
+            if (previous == null)
+            {
+                MessageBox.Show(
+                    "There's no previous search to go back to yet.",
+                    "Municipal Services App",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            ApplySearchQueryToFilterBar(previous);
+            ExecuteSearch(recordSearch: false);
+        }
+
+        /// <summary>
+        /// Applies a recorded search's criteria back onto the filter bar controls.
+        /// Deliberately does NOT re-record the search - the caller is meant to run
+        /// ExecuteSearch(recordSearch: false) afterwards, since re-recording would
+        /// just push the same query straight back onto the history stack and defeat
+        /// the point of "Previous Search" stepping backwards through it.
+        /// </summary>
+        private void ApplySearchQueryToFilterBar(SearchQuery query)
+        {
+            var categoryIndex = string.IsNullOrWhiteSpace(query.Category)
+                ? 0
+                : _cmbCategory.Items.IndexOf(query.Category);
+            _cmbCategory.SelectedIndex = categoryIndex >= 0 ? categoryIndex : 0;
+
+            _dtpFrom.Value = query.FromDate ?? _defaultFromDate;
+            _dtpTo.Value = query.ToDate ?? _defaultToDate;
+            _txtKeyword.Text = query.Keyword ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Refreshes the recommendations section against whatever the main events
+        /// gallery is currently showing (<paramref name="currentlyVisibleEvents"/>),
+        /// so recommended events always exclude those already on screen. The whole
+        /// section hides itself when there's no real search history yet, or when
+        /// everything it would otherwise recommend is already visible above - both
+        /// cases where showing it would just be a duplicate of the main gallery.
+        /// </summary>
+        private void RefreshRecommendationsGallery(List<Event> currentlyVisibleEvents)
+        {
+            if (_recommendationEngine.SearchCount == 0)
+            {
+                _pnlRecommendationsSection.Visible = false;
+                ForceScrollableRelayout(_scrollEventsPanel, _flpEventsGallery, _flpRecommendationsGallery);
+                return;
+            }
+
+            var excludeIds = (currentlyVisibleEvents ?? new List<Event>()).Select(e => e.Id);
+            var recommendations = _recommendationEngine.GetRecommendations(6, excludeIds);
+
+            _pnlRecommendationsSection.Visible = recommendations.Count > 0;
+
+            _flpRecommendationsGallery.SuspendLayout();
+
+            foreach (Control control in _flpRecommendationsGallery.Controls)
+            {
+                control.Dispose();
+            }
+            _flpRecommendationsGallery.Controls.Clear();
+
+            foreach (var recommended in recommendations)
+            {
+                _flpRecommendationsGallery.Controls.Add(
+                    CreateEventCard(recommended.Event, isRecommended: true, reason: recommended.Reason));
+            }
+
+            _flpRecommendationsGallery.ResumeLayout();
+
+            _lblRecommendationsSummary.Text =
+                $"Based on {_recommendationEngine.SearchCount} search{(_recommendationEngine.SearchCount == 1 ? string.Empty : "es")} this session - different from what's shown above.";
+
+            ForceScrollableRelayout(_scrollEventsPanel, _flpEventsGallery, _flpRecommendationsGallery);
         }
 
         private Panel BuildAnnouncementsSection()
@@ -899,6 +1081,14 @@ namespace MunicipalServicesApp
             }
 
             RefreshEventsGallery(results);
+
+            // Recommendations depend on category search frequency, which just
+            // changed above (when recordSearch is true) - and "Previous Search"
+            // re-applying an older query (recordSearch: false) should still reflect
+            // that query's results, so refresh unconditionally either way. Pass the
+            // current results so recommendations can exclude whatever's already
+            // visible in the main gallery above.
+            RefreshRecommendationsGallery(results);
         }
 
         private void RefreshEventsGallery(List<Event> events)
@@ -927,8 +1117,9 @@ namespace MunicipalServicesApp
 
         private static EventCardControl CreateEventCard(Event evt, bool isRecommended = false, string reason = null)
         {
-            return new EventCardControl
+            var card = new EventCardControl
             {
+                EventId = evt.Id,
                 Title = evt.Title,
                 Category = evt.Category,
                 EventLocation = evt.Location,
@@ -937,6 +1128,33 @@ namespace MunicipalServicesApp
                 IsRecommended = isRecommended,
                 RecommendationReason = reason ?? string.Empty
             };
+
+            card.Click += (s, e) => ShowEventDetails(card.EventId);
+            return card;
+        }
+
+        /// <summary>
+        /// Looks the full event back up by id (demonstrating a genuine use of
+        /// <see cref="EventsRepository.GetEventById"/>'s dictionary lookup, rather
+        /// than the card just carrying its own separate copy of every field) and
+        /// shows it in a simple detail popup.
+        /// </summary>
+        private static void ShowEventDetails(string eventId)
+        {
+            var evt = EventsRepository.GetEventById(eventId);
+            if (evt == null)
+            {
+                return;
+            }
+
+            var message =
+                $"{evt.Title}\n\n" +
+                $"Category: {evt.Category}\n" +
+                $"Date: {evt.EventDate:dddd, dd MMMM yyyy}\n" +
+                $"Location: {evt.Location}\n\n" +
+                evt.Description;
+
+            MessageBox.Show(message, "Event Details", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }

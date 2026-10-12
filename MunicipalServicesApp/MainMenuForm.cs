@@ -57,5 +57,29 @@ namespace MunicipalServicesApp
                 this.Show();
             }
         }
+
+        private void cardLocalEvents_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                using (var localEventsForm = new LocalEventsForm())
+                {
+                    this.Hide();
+                    localEventsForm.ShowDialog(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Something went wrong opening the Local Events screen:" + Environment.NewLine + ex.Message,
+                    "Municipal Services App",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            finally
+            {
+                this.Show();
+            }
+        }
     }
 }

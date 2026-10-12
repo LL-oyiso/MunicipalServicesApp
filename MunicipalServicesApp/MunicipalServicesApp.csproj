@@ -58,6 +58,7 @@
     <Compile Include="Common\PriorityQueue.cs" />
     <Compile Include="Common\EventCardControl.cs" />
     <Compile Include="Common\AnnouncementCardControl.cs" />
+    <Compile Include="Common\NotificationBadgeControl.cs" />
     <Compile Include="MainMenuForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -69,6 +70,12 @@
     </Compile>
     <Compile Include="ReportIssuesForm.Designer.cs">
       <DependentUpon>ReportIssuesForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="LocalEventsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LocalEventsForm.Designer.cs">
+      <DependentUpon>LocalEventsForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

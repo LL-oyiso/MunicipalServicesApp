@@ -128,15 +128,13 @@ namespace MunicipalServicesApp
             //
             // cardLocalEvents
             //
-            this.cardLocalEvents.BadgeText = "Coming soon";
             this.cardLocalEvents.Description = "Browse local events, notices and announcements shared by the municipality.";
             this.cardLocalEvents.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.cardLocalEvents.Enabled = false;
             this.cardLocalEvents.Icon = MunicipalServicesApp.Common.MenuCardIcon.Calendar;
             this.cardLocalEvents.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.cardLocalEvents.Name = "cardLocalEvents";
             this.cardLocalEvents.Title = "Local Events and Announcements";
-            this.toolTip1.SetToolTip(this.cardLocalEvents, "Coming soon in a future update.");
+            this.cardLocalEvents.Click += new System.EventHandler(this.cardLocalEvents_Click);
             //
             // cardServiceStatus
             //
@@ -154,7 +152,7 @@ namespace MunicipalServicesApp
             //
             this.lblFooterNote.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblFooterNote.Name = "lblFooterNote";
-            this.lblFooterNote.Text = "Local Events and Service Request Status will be available in a future update.";
+            this.lblFooterNote.Text = "Service Request Status will be available in a future update.";
             this.lblFooterNote.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             //
             // MainMenuForm

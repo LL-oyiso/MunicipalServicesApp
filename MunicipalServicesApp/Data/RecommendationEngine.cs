@@ -120,16 +120,28 @@ namespace MunicipalServicesApp.Data
         /// upcoming events from them. Falls back to the soonest upcoming events
         /// overall when there is no search history yet, or to fill any remaining
         /// quota the searched categories could not satisfy.
+        ///
+        /// <paramref name="excludeEventIds"/> lets the caller rule out events already
+        /// visible elsewhere (e.g. the main events gallery's current search results),
+        /// so recommendations never just duplicate what the resident can already see
+        /// on screen.
         /// </summary>
-        public List<RecommendedEvent> GetRecommendations(int count)
+        public List<RecommendedEvent> GetRecommendations(int count, IEnumerable<string> excludeEventIds = null)
         {
             var recommendations = new List<RecommendedEvent>();
-            var seenEventIds = new HashSet<string>();
+            var seenEventIds = excludeEventIds != null
+                ? new HashSet<string>(excludeEventIds, StringComparer.OrdinalIgnoreCase)
+                : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             if (_categoryFrequency.Count == 0)
             {
-                foreach (var evt in EventsRepository.GetUpcomingEvents(count))
+                foreach (var evt in EventsRepository.GetUpcomingEvents(count + seenEventIds.Count))
                 {
+                    if (recommendations.Count >= count)
+                    {
+                        break;
+                    }
+
                     if (seenEventIds.Add(evt.Id))
                     {
                         recommendations.Add(new RecommendedEvent(evt, "Popular upcoming event"));
