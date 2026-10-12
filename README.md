@@ -1,9 +1,10 @@
 # Municipal Services App
 
 A C# Windows Forms (.NET Framework 4.8) application that lets residents report municipal
-issues and service requests. This phase implements the **Report Issues** task in full;
-**Local Events and Announcements** and **Service Request Status** are visible on the main
-menu but intentionally disabled, ready for later phases.
+issues, browse local events and announcements, and (in a later phase) check on service
+requests. This phase implements the **Report Issues** and **Local Events and Announcements**
+tasks in full; **Service Request Status** is visible on the main menu but intentionally
+disabled, ready for a later phase.
 
 ## Prerequisites
 
@@ -26,21 +27,39 @@ MunicipalServicesApp/
   README.md                          - this file
   MunicipalServicesApp/              - project folder
     Program.cs                       - application entry point
-    MainMenuForm.cs / .Designer.cs   - startup screen (3 tasks, 2 disabled)
+    MainMenuForm.cs / .Designer.cs   - startup screen (3 tasks, 1 disabled)
     ReportIssuesForm.cs / .Designer.cs - the Report Issues wizard
+    LocalEventsForm.cs / .Designer.cs  - the Local Events and Announcements screen
     Models/
       Issue.cs                       - data model for a single reported issue
+      Event.cs                       - data model for a single local event
+      Announcement.cs                - data model for a single municipal announcement
     Data/
       IssueRepository.cs             - in-memory List<Issue> store for all reported issues
+      EventsRepository.cs            - in-memory event/announcement store (dictionaries,
+                                        sorted dictionary, hash sets, queue - seeded with
+                                        sample data)
+      RecommendationEngine.cs        - per-session search history (stack) and category
+                                        frequency ranking used to recommend events
     Common/
       AppTheme.cs                    - shared colours/fonts/button styles used by every form
       StepIndicatorControl.cs        - custom-drawn wizard step indicator (progress chips)
+      MenuCardControl.cs             - custom-drawn main menu task card
+      PriorityQueue.cs               - generic binary min-heap (no built-in equivalent in
+                                        .NET Framework 4.8), used to rank announcements and
+                                        recommended categories
+      EventCardControl.cs            - custom-drawn event card (plain and "recommended" variants)
+      AnnouncementCardControl.cs     - custom-drawn announcement card (urgent/resident-submitted variants)
+      NotificationBadgeControl.cs    - small red "unread count" badge used on the Announcements tab
 ```
 
 The wizard's Designer file holds only the persistent chrome - the header bar with the step
 indicator, the content area and the footer navigation. The seven step panels themselves are
 built in code in `ReportIssuesForm.cs`, because the Summary and Confirmation screens have to
-be generated from whatever the resident actually entered.
+be generated from whatever the resident actually entered. `LocalEventsForm` follows the same
+pattern: its Designer file only holds the header bar and an empty content panel, while the
+tab strip, filter bar, galleries, submission form and pending-review queue are all built in
+code in `LocalEventsForm.cs`, since they react to live search/filter state.
 
 ## How to compile and run
 
@@ -70,9 +89,9 @@ MunicipalServicesApp\MunicipalServicesApp\bin\Debug\MunicipalServicesApp.exe
 
 1. **Main Menu** opens on startup with three options:
    - **Report Issues** - enabled, described below.
-   - **Local Events and Announcements** - disabled (greyed out); hover over it to see a
-     tooltip explaining it's coming in a future update.
-   - **Service Request Status** - disabled for the same reason.
+   - **Local Events and Announcements** - enabled, described further down.
+   - **Service Request Status** - disabled (greyed out); hover over it to see a tooltip
+     explaining it's coming in a future update.
 
 2. Click **Report Issues** to open the reporting wizard. Instead of one long form, the
    report is captured over six short steps, with a seventh confirmation screen at the end.
@@ -129,16 +148,55 @@ MunicipalServicesApp\MunicipalServicesApp\bin\Debug\MunicipalServicesApp.exe
    already entered something, it asks you to confirm first so a report is never discarded by
    accident.
 
+7. Click **Local Events and Announcements** on the main menu to open that screen (it opens
+   maximized - there's a lot to show). It has two tabs:
+
+   - **Upcoming Events**
+     - A filter bar lets you narrow events by **Category**, a **From/To date** range (the
+       pickers default to the earliest/latest seeded event dates, so the initial view shows
+       everything), and a free-text **Keyword** search across titles, descriptions and
+       locations. **Search** applies the filters; **Clear filters** resets them.
+     - Below that, the **Upcoming Events** gallery shows every event matching the current
+       filters as a card (date tile, title, category badge, location and description).
+     - Once you've searched at least once, a **Recommended For You** section appears beneath
+       the gallery: events ranked by how often you've searched each category this session,
+       always excluding whatever's already visible in the gallery above (so it never just
+       repeats what you can already see). Each recommended card is tagged "RECOMMENDED" with
+       a short reason (e.g. "Because you searched Community 2 time(s)"). A **Previous
+       Search** button steps backwards through your last few searches (one at a time),
+       re-applying each one's filters.
+
+   - **Announcements** - a notification badge on this tab shows how many published
+     announcements you haven't viewed yet; it clears once you switch to the tab.
+     - The **Municipal Announcements** gallery lists every published announcement, with
+       **URGENT** ones shown first (red border) and a "Resident request" tag on announcements
+       that started as a resident submission rather than an official notice.
+     - **Submit an Announcement Request** lets you suggest a title, category and message for
+       the municipality to review. Submitted requests don't appear on the public board
+       immediately - they go into **Pending Review** below.
+     - **Pending Review** lists everything awaiting review; **Publish Next** publishes the
+       oldest pending request (first-in-first-out) onto the public Announcements gallery
+       above.
+
 ## Notes
 
-- **Data storage**: reported issues are stored in memory only (`IssueRepository`, backed by a
-  `List<Issue>`), for the duration of the running application. There is no database or file
-  persistence yet - this will be introduced as later tasks (Service Request Status) are
-  implemented.
-- **Why Local Events and Service Request Status are disabled**: the brief for this phase only
-  requires the Report Issues task to be implemented; the other two are deliberately left as
-  visibly disabled placeholders rather than removed, so the full intended navigation structure
+- **Data storage**: reported issues, events and announcements are all stored in memory only
+  (`IssueRepository` and `EventsRepository`), for the duration of the running application.
+  There is no database or file persistence yet - this will be introduced as a later task
+  (Service Request Status) is implemented.
+- **Why Service Request Status is disabled**: the brief for this phase requires Report Issues
+  and Local Events and Announcements; Service Request Status is deliberately left as a
+  visibly disabled placeholder rather than removed, so the full intended navigation structure
   of the app is already in place for future work.
+- **Data structures used by Local Events and Announcements**: each piece of the feature maps
+  onto a different core data structure. `EventsRepository` indexes events by `Dictionary`
+  (lookup by ID), `Dictionary<string, List<Event>>` (by category) and `SortedDictionary`
+  (by date, for fast chronological range queries), with `HashSet`s tracking the distinct
+  categories/dates seen; pending announcement requests are held in a `Queue` so they're
+  published in the order they were submitted; a generic `PriorityQueue<T>` (hand-written, since
+  .NET Framework 4.8 has no built-in one) ranks urgent-first/newest-first announcements and
+  most-searched-first categories; and `RecommendationEngine` keeps a `Stack` of the resident's
+  search history for the session, so "Previous Search" can step backwards through it.
 - **Engagement strategy**: the step indicator in the wizard header is the concrete
   implementation of the "Participatory Co-Design and Community Consultation" engagement
   strategy chosen in the Task 1 research. It is a custom control drawn with GDI+
