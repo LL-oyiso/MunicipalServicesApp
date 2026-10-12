@@ -244,78 +244,14 @@ namespace MunicipalServicesApp
         }
 
         /// <summary>
-        /// Recomputes each given gallery's real wrapped height (see
-        /// FitFlowPanelHeight) and then makes the containing AutoScroll panel
-        /// re-layout against those now-correct heights. Safe to call repeatedly (on
-        /// tab switch, on gallery refresh, and once more after the form is actually
-        /// Shown) since it's cheap and idempotent. Accepts multiple galleries since
-        /// the Events tab stacks two of them (events, then recommendations) inside
-        /// the same scroll panel.
+        /// Thin wrapper kept so existing call sites in this file read the same as
+        /// before. The actual fix (and the full explanation of why it's needed) now
+        /// lives in <see cref="FlowLayoutHelper"/>, shared with any other scrollable
+        /// card gallery in the app (e.g. the Community Resources bonus section).
         /// </summary>
         private static void ForceScrollableRelayout(Panel scrollPanel, params FlowLayoutPanel[] galleries)
         {
-            foreach (var gallery in galleries)
-            {
-                if (gallery != null)
-                {
-                    FitFlowPanelHeight(gallery);
-                }
-            }
-
-            scrollPanel?.PerformLayout();
-        }
-
-        /// <summary>
-        /// Manually computes and assigns a FlowLayoutPanel's height to fit every
-        /// wrapped row of its children, based on the panel's *current* ClientSize.Width.
-        ///
-        /// This exists because FlowLayoutPanel's own AutoSize+WrapContents height
-        /// calculation turned out to be unreliable once nested inside a Dock=Top
-        /// AutoSize section Panel, itself inside a Dock=Fill AutoScroll Panel: it was
-        /// self-reporting a height that only accounted for the first row, so every
-        /// row after it got silently clipped - and no scrollbar ever appeared on the
-        /// outer AutoScroll panel, because AutoScrollMinSize is computed FROM that
-        /// already-wrong child height, not independently. The panel's WIDTH (and
-        /// therefore how many cards fit per row) is assigned correctly by ordinary
-        /// Dock=Top layout well before this runs, so replicating just the wrap-height
-        /// arithmetic ourselves - using the panel's real current width and each
-        /// child's real size/margin - sidesteps the unreliable built-in calculation
-        /// entirely.
-        /// </summary>
-        private static void FitFlowPanelHeight(FlowLayoutPanel flp)
-        {
-            var availableWidth = flp.ClientSize.Width;
-            if (availableWidth <= 0 || flp.Controls.Count == 0)
-            {
-                flp.Height = 0;
-                return;
-            }
-
-            var totalHeight = 0;
-            var rowHeight = 0;
-            var rowWidthUsed = 0;
-            var isFirstInRow = true;
-
-            foreach (Control control in flp.Controls)
-            {
-                var controlWidth = control.Width + control.Margin.Left + control.Margin.Right;
-                var controlHeight = control.Height + control.Margin.Top + control.Margin.Bottom;
-
-                if (!isFirstInRow && rowWidthUsed + controlWidth > availableWidth)
-                {
-                    totalHeight += rowHeight;
-                    rowWidthUsed = 0;
-                    rowHeight = 0;
-                    isFirstInRow = true;
-                }
-
-                rowWidthUsed += controlWidth;
-                rowHeight = Math.Max(rowHeight, controlHeight);
-                isFirstInRow = false;
-            }
-
-            totalHeight += rowHeight;
-            flp.Height = totalHeight;
+            FlowLayoutHelper.ForceScrollableRelayout(scrollPanel, galleries);
         }
 
         /// <summary>

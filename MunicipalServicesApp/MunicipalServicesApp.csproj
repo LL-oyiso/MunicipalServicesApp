@@ -49,9 +49,13 @@
     <Compile Include="Models\Issue.cs" />
     <Compile Include="Models\Event.cs" />
     <Compile Include="Models\Announcement.cs" />
+    <Compile Include="Models\EmergencyContact.cs" />
+    <Compile Include="Models\WardCouncilMember.cs" />
+    <Compile Include="Models\CommunityProgram.cs" />
     <Compile Include="Data\IssueRepository.cs" />
     <Compile Include="Data\EventsRepository.cs" />
     <Compile Include="Data\RecommendationEngine.cs" />
+    <Compile Include="Data\CommunityResourcesRepository.cs" />
     <Compile Include="Common\AppTheme.cs" />
     <Compile Include="Common\StepIndicatorControl.cs" />
     <Compile Include="Common\MenuCardControl.cs" />
@@ -59,6 +63,8 @@
     <Compile Include="Common\EventCardControl.cs" />
     <Compile Include="Common\AnnouncementCardControl.cs" />
     <Compile Include="Common\NotificationBadgeControl.cs" />
+    <Compile Include="Common\ContactCardControl.cs" />
+    <Compile Include="Common\FlowLayoutHelper.cs" />
     <Compile Include="MainMenuForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -76,6 +82,12 @@
     </Compile>
     <Compile Include="LocalEventsForm.Designer.cs">
       <DependentUpon>LocalEventsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="CommunityResourcesForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CommunityResourcesForm.Designer.cs">
+      <DependentUpon>CommunityResourcesForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

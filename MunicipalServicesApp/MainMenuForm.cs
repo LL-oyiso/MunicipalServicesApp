@@ -81,5 +81,34 @@ namespace MunicipalServicesApp
                 this.Show();
             }
         }
+
+        /// <summary>
+        /// Opens the Community Resources bonus section. This feature (and the card
+        /// itself) is explicitly a nice-to-have extra and is not required by or
+        /// scored against the marking rubric for Local Events and Announcements.
+        /// </summary>
+        private void cardCommunityResources_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                using (var communityResourcesForm = new CommunityResourcesForm())
+                {
+                    this.Hide();
+                    communityResourcesForm.ShowDialog(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Something went wrong opening the Community Resources screen:" + Environment.NewLine + ex.Message,
+                    "Municipal Services App",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            finally
+            {
+                this.Show();
+            }
+        }
     }
 }

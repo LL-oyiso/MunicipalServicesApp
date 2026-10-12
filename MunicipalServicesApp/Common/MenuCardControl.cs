@@ -10,7 +10,8 @@ namespace MunicipalServicesApp.Common
     {
         Document,
         Calendar,
-        Search
+        Search,
+        Shield
     }
 
     /// <summary>
@@ -136,13 +137,17 @@ namespace MunicipalServicesApp.Common
                 g.DrawString(_description, AppTheme.SmallFont, descBrush, descRect);
             }
 
-            if (!Enabled && _badgeText.Length > 0)
+            if (_badgeText.Length > 0)
             {
-                DrawBadge(g);
+                // "Coming soon" (disabled cards) uses the warning colour; an enabled
+                // card's badge (e.g. "Bonus" on Community Resources, flagging it as a
+                // non-marked extra) uses the accent colour instead, so the two
+                // meanings stay visually distinct.
+                DrawBadge(g, Enabled ? AppTheme.AccentColor : AppTheme.WarningColor);
             }
         }
 
-        private void DrawBadge(Graphics g)
+        private void DrawBadge(Graphics g, Color badgeColor)
         {
             using (var font = new Font("Segoe UI", 8F, FontStyle.Bold))
             {
@@ -153,7 +158,7 @@ namespace MunicipalServicesApp.Common
 
                 using (var path = RoundedRect(Rectangle.Round(badgeRect), 10))
                 {
-                    using (var brush = new SolidBrush(AppTheme.WarningColor))
+                    using (var brush = new SolidBrush(badgeColor))
                     {
                         g.FillPath(brush, path);
                     }
@@ -181,6 +186,9 @@ namespace MunicipalServicesApp.Common
                         break;
                     case MenuCardIcon.Search:
                         DrawSearchIcon(g, rect, pen);
+                        break;
+                    case MenuCardIcon.Shield:
+                        DrawShieldIcon(g, rect, pen, color);
                         break;
                 }
             }
@@ -236,6 +244,35 @@ namespace MunicipalServicesApp.Common
                 g.FillEllipse(brush, x + w * 0.20F, y + h * 0.48F, 5, 5);
                 g.FillEllipse(brush, x + w * 0.46F, y + h * 0.48F, 5, 5);
                 g.FillEllipse(brush, x + w * 0.72F, y + h * 0.48F, 5, 5);
+            }
+        }
+
+        /// <summary>A simple shield with a cross, representing civic/community support services.</summary>
+        private static void DrawShieldIcon(Graphics g, Rectangle rect, Pen pen, Color color)
+        {
+            float x = rect.X + 6;
+            float y = rect.Y + 2;
+            float w = rect.Width - 12;
+            float h = rect.Height - 6;
+
+            var outline = new[]
+            {
+                new PointF(x + w / 2F, y),
+                new PointF(x + w, y + h * 0.22F),
+                new PointF(x + w, y + h * 0.55F),
+                new PointF(x + w / 2F, y + h),
+                new PointF(x, y + h * 0.55F),
+                new PointF(x, y + h * 0.22F),
+                new PointF(x + w / 2F, y)
+            };
+            g.DrawLines(pen, outline);
+
+            using (var crossPen = new Pen(color, 2.2F) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+            {
+                var centerX = x + w / 2F;
+                var centerY = y + h * 0.48F;
+                g.DrawLine(crossPen, centerX, centerY - 9, centerX, centerY + 9);
+                g.DrawLine(crossPen, centerX - 9, centerY, centerX + 9, centerY);
             }
         }
 

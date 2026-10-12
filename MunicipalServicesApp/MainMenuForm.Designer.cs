@@ -39,6 +39,7 @@ namespace MunicipalServicesApp
             this.pnlCards = new System.Windows.Forms.TableLayoutPanel();
             this.cardReportIssues = new MunicipalServicesApp.Common.MenuCardControl();
             this.cardLocalEvents = new MunicipalServicesApp.Common.MenuCardControl();
+            this.cardCommunityResources = new MunicipalServicesApp.Common.MenuCardControl();
             this.cardServiceStatus = new MunicipalServicesApp.Common.MenuCardControl();
             this.lblFooterNote = new System.Windows.Forms.Label();
             this.layoutRoot.SuspendLayout();
@@ -103,17 +104,18 @@ namespace MunicipalServicesApp
             //
             // pnlCards
             //
-            this.pnlCards.ColumnCount = 3;
-            this.pnlCards.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
-            this.pnlCards.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33334F));
-            this.pnlCards.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
+            this.pnlCards.ColumnCount = 2;
+            this.pnlCards.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.pnlCards.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.pnlCards.Controls.Add(this.cardReportIssues, 0, 0);
             this.pnlCards.Controls.Add(this.cardLocalEvents, 1, 0);
-            this.pnlCards.Controls.Add(this.cardServiceStatus, 2, 0);
+            this.pnlCards.Controls.Add(this.cardCommunityResources, 0, 1);
+            this.pnlCards.Controls.Add(this.cardServiceStatus, 1, 1);
             this.pnlCards.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlCards.Name = "pnlCards";
-            this.pnlCards.RowCount = 1;
-            this.pnlCards.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.pnlCards.RowCount = 2;
+            this.pnlCards.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.pnlCards.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             //
             // cardReportIssues
             //
@@ -121,7 +123,7 @@ namespace MunicipalServicesApp
     "or faulty streetlight.";
             this.cardReportIssues.Dock = System.Windows.Forms.DockStyle.Fill;
             this.cardReportIssues.Icon = MunicipalServicesApp.Common.MenuCardIcon.Document;
-            this.cardReportIssues.Margin = new System.Windows.Forms.Padding(0, 0, 12, 0);
+            this.cardReportIssues.Margin = new System.Windows.Forms.Padding(0, 0, 12, 12);
             this.cardReportIssues.Name = "cardReportIssues";
             this.cardReportIssues.Title = "Report Issues";
             this.cardReportIssues.Click += new System.EventHandler(this.cardReportIssues_Click);
@@ -131,10 +133,21 @@ namespace MunicipalServicesApp
             this.cardLocalEvents.Description = "Browse local events, notices and announcements shared by the municipality.";
             this.cardLocalEvents.Dock = System.Windows.Forms.DockStyle.Fill;
             this.cardLocalEvents.Icon = MunicipalServicesApp.Common.MenuCardIcon.Calendar;
-            this.cardLocalEvents.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            this.cardLocalEvents.Margin = new System.Windows.Forms.Padding(12, 0, 0, 12);
             this.cardLocalEvents.Name = "cardLocalEvents";
             this.cardLocalEvents.Title = "Local Events and Announcements";
             this.cardLocalEvents.Click += new System.EventHandler(this.cardLocalEvents_Click);
+            //
+            // cardCommunityResources
+            //
+            this.cardCommunityResources.Description = "Find emergency services, ward councillor contacts and community support progr" +
+    "ammes near you.";
+            this.cardCommunityResources.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.cardCommunityResources.Icon = MunicipalServicesApp.Common.MenuCardIcon.Shield;
+            this.cardCommunityResources.Margin = new System.Windows.Forms.Padding(0, 12, 12, 0);
+            this.cardCommunityResources.Name = "cardCommunityResources";
+            this.cardCommunityResources.Title = "Community Resources";
+            this.cardCommunityResources.Click += new System.EventHandler(this.cardCommunityResources_Click);
             //
             // cardServiceStatus
             //
@@ -143,7 +156,7 @@ namespace MunicipalServicesApp
             this.cardServiceStatus.Dock = System.Windows.Forms.DockStyle.Fill;
             this.cardServiceStatus.Enabled = false;
             this.cardServiceStatus.Icon = MunicipalServicesApp.Common.MenuCardIcon.Search;
-            this.cardServiceStatus.Margin = new System.Windows.Forms.Padding(12, 0, 0, 0);
+            this.cardServiceStatus.Margin = new System.Windows.Forms.Padding(12, 12, 0, 0);
             this.cardServiceStatus.Name = "cardServiceStatus";
             this.cardServiceStatus.Title = "Service Request Status";
             this.toolTip1.SetToolTip(this.cardServiceStatus, "Coming soon in a future update.");
@@ -159,9 +172,9 @@ namespace MunicipalServicesApp
             //
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(820, 520);
+            this.ClientSize = new System.Drawing.Size(900, 640);
             this.Controls.Add(this.layoutRoot);
-            this.MinimumSize = new System.Drawing.Size(720, 460);
+            this.MinimumSize = new System.Drawing.Size(800, 560);
             this.Name = "MainMenuForm";
             this.Text = "Municipal Services App - Main Menu";
             this.pnlHeaderBar.ResumeLayout(false);
@@ -184,6 +197,7 @@ namespace MunicipalServicesApp
         private System.Windows.Forms.TableLayoutPanel pnlCards;
         private MunicipalServicesApp.Common.MenuCardControl cardReportIssues;
         private MunicipalServicesApp.Common.MenuCardControl cardLocalEvents;
+        private MunicipalServicesApp.Common.MenuCardControl cardCommunityResources;
         private MunicipalServicesApp.Common.MenuCardControl cardServiceStatus;
         private System.Windows.Forms.Label lblFooterNote;
     }

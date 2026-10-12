@@ -4,7 +4,13 @@ A C# Windows Forms (.NET Framework 4.8) application that lets residents report m
 issues, browse local events and announcements, and (in a later phase) check on service
 requests. This phase implements the **Report Issues** and **Local Events and Announcements**
 tasks in full; **Service Request Status** is visible on the main menu but intentionally
-disabled, ready for a later phase.
+disabled, ready for a later phase. A bonus **Community Resources** section is also included -
+see the note below, it is an unmarked extra and not part of the graded submission.
+
+> **Community Resources is a bonus, non-marked extra.** It is not required by, and is not
+> scored against, the marking rubric for this submission. It was added purely to make the app
+> more useful to a resident - see the "Community Resources (bonus)" section further down for
+> what it does.
 
 ## Prerequisites
 
@@ -27,13 +33,17 @@ MunicipalServicesApp/
   README.md                          - this file
   MunicipalServicesApp/              - project folder
     Program.cs                       - application entry point
-    MainMenuForm.cs / .Designer.cs   - startup screen (3 tasks, 1 disabled)
+    MainMenuForm.cs / .Designer.cs   - startup screen (4 tasks, 1 disabled, 1 bonus)
     ReportIssuesForm.cs / .Designer.cs - the Report Issues wizard
     LocalEventsForm.cs / .Designer.cs  - the Local Events and Announcements screen
+    CommunityResourcesForm.cs / .Designer.cs - bonus section (not marked), see below
     Models/
       Issue.cs                       - data model for a single reported issue
       Event.cs                       - data model for a single local event
       Announcement.cs                - data model for a single municipal announcement
+      EmergencyContact.cs            - bonus: a single emergency service contact
+      WardCouncilMember.cs           - bonus: a single ward councillor/caretaker
+      CommunityProgram.cs            - bonus: a single community support programme
     Data/
       IssueRepository.cs             - in-memory List<Issue> store for all reported issues
       EventsRepository.cs            - in-memory event/announcement store (dictionaries,
@@ -41,6 +51,8 @@ MunicipalServicesApp/
                                         sample data)
       RecommendationEngine.cs        - per-session search history (stack) and category
                                         frequency ranking used to recommend events
+      CommunityResourcesRepository.cs - bonus: in-memory store for Emergency Services,
+                                        Know Your Ward and Community Programs
     Common/
       AppTheme.cs                    - shared colours/fonts/button styles used by every form
       StepIndicatorControl.cs        - custom-drawn wizard step indicator (progress chips)
@@ -51,6 +63,10 @@ MunicipalServicesApp/
       EventCardControl.cs            - custom-drawn event card (plain and "recommended" variants)
       AnnouncementCardControl.cs     - custom-drawn announcement card (urgent/resident-submitted variants)
       NotificationBadgeControl.cs    - small red "unread count" badge used on the Announcements tab
+      ContactCardControl.cs          - bonus: generic card (title/badge/detail lines) shared by
+                                        all three Community Resources sections
+      FlowLayoutHelper.cs            - shared FlowLayoutPanel wrap-height fix used by every
+                                        scrollable card gallery in the app
 ```
 
 The wizard's Designer file holds only the persistent chrome - the header bar with the step
@@ -87,9 +103,11 @@ MunicipalServicesApp\MunicipalServicesApp\bin\Debug\MunicipalServicesApp.exe
 
 ## How to use the app
 
-1. **Main Menu** opens on startup with three options:
+1. **Main Menu** opens on startup with four options:
    - **Report Issues** - enabled, described below.
    - **Local Events and Announcements** - enabled, described further down.
+   - **Community Resources** - enabled, tagged **"Bonus"**; a non-marked extra described
+     further down.
    - **Service Request Status** - disabled (greyed out); hover over it to see a tooltip
      explaining it's coming in a future update.
 
@@ -178,6 +196,20 @@ MunicipalServicesApp\MunicipalServicesApp\bin\Debug\MunicipalServicesApp.exe
        oldest pending request (first-in-first-out) onto the public Announcements gallery
        above.
 
+8. **Community Resources (bonus, not marked)** - click the **"Bonus"**-tagged card on the
+   main menu to open this screen. It has three tabs:
+
+   - **Emergency Services** - filter by **Service Type** (Fire Brigade, Ambulance, Police,
+     Mental Health) and/or an **Area** keyword, then **Search**. Each card shows the
+     contact's area, phone number, address and hours. Province-wide numbers (e.g. the
+     national ambulance line `10177`) are included alongside area-specific contacts.
+   - **Know Your Ward** - pick a ward from the dropdown (or leave it on "All Wards") to see
+     that ward's councillor(s) and community caretaker(s), with their phone, email and
+     office hours.
+   - **Community Programs** - filter by category (**Computer Literacy**, **CV Guidelines**,
+     **Interview Preparation**) to see available sessions, their schedule, location and
+     contact info.
+
 ## Notes
 
 - **Data storage**: reported issues, events and announcements are all stored in memory only
@@ -197,6 +229,12 @@ MunicipalServicesApp\MunicipalServicesApp\bin\Debug\MunicipalServicesApp.exe
   .NET Framework 4.8 has no built-in one) ranks urgent-first/newest-first announcements and
   most-searched-first categories; and `RecommendationEngine` keeps a `Stack` of the resident's
   search history for the session, so "Previous Search" can step backwards through it.
+- **Community Resources is a bonus feature**: it is not required by, and is not scored
+  against, the marking rubric for Local Events and Announcements. It was added purely as a
+  non-marked extra, reusing the same in-memory-only pattern and visual style as the rest of
+  the app, and all of its seed data (names, phone numbers, addresses) is fictional placeholder
+  content except for the handful of genuinely public national service numbers it lists (e.g.
+  `10177`, `112`, the SADAG helpline).
 - **Engagement strategy**: the step indicator in the wizard header is the concrete
   implementation of the "Participatory Co-Design and Community Consultation" engagement
   strategy chosen in the Task 1 research. It is a custom control drawn with GDI+
