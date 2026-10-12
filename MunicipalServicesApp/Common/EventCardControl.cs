@@ -23,6 +23,13 @@ namespace MunicipalServicesApp.Common
         private bool _isRecommended;
         private bool _isHovering;
 
+        /// <summary>
+        /// The underlying <see cref="Models.Event.Id"/>, so the card's click handler
+        /// can look the full event back up by id (see <see cref="Data.EventsRepository.GetEventById"/>)
+        /// rather than needing its own separate copy of every field.
+        /// </summary>
+        public string EventId { get; set; } = string.Empty;
+
         public string Title
         {
             get => _title;
@@ -91,7 +98,7 @@ namespace MunicipalServicesApp.Common
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             BackColor = Color.White;
-            Cursor = Cursors.Default;
+            Cursor = Cursors.Hand;
             Margin = new Padding(8);
             Size = new Size(300, DefaultHeight);
         }
