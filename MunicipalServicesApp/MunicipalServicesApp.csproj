@@ -57,13 +57,25 @@
     <Compile Include="Data\RecommendationEngine.cs" />
     <Compile Include="Data\CommunityResourcesRepository.cs" />
     <Compile Include="Common\AppTheme.cs" />
-    <Compile Include="Common\StepIndicatorControl.cs" />
-    <Compile Include="Common\MenuCardControl.cs" />
+    <Compile Include="Common\StepIndicatorControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Common\MenuCardControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Common\PriorityQueue.cs" />
-    <Compile Include="Common\EventCardControl.cs" />
-    <Compile Include="Common\AnnouncementCardControl.cs" />
-    <Compile Include="Common\NotificationBadgeControl.cs" />
-    <Compile Include="Common\ContactCardControl.cs" />
+    <Compile Include="Common\EventCardControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Common\AnnouncementCardControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Common\NotificationBadgeControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Common\ContactCardControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Common\FlowLayoutHelper.cs" />
     <Compile Include="MainMenuForm.cs">
       <SubType>Form</SubType>
