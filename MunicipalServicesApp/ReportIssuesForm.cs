@@ -102,7 +102,7 @@ namespace MunicipalServicesApp
         private FlowLayoutPanel flpSummary;
         private bool _rebuildingSummary;
         private Label lblReferenceNumber;
-        private Label lblConfirmationDetail;
+        private TextBox txtConfirmationDetail;
 
         public ReportIssuesForm()
         {
@@ -110,6 +110,31 @@ namespace MunicipalServicesApp
             ApplyChromeTheme();
             BuildStepPanels();
             GoToStep(StepCategory);
+            FitToWorkingArea();
+        }
+
+        /// <summary>
+        /// The designed 760x680 size is taller than the usable screen on a 1366x768
+        /// laptop at 125% scaling, which pushed the footer and the bottom of the
+        /// confirmation report off-screen. Shrink the form (and its minimum size) to
+        /// the screen's working area so every step always fits.
+        /// </summary>
+        private void FitToWorkingArea()
+        {
+            var workingArea = Screen.FromPoint(Cursor.Position).WorkingArea;
+
+            MinimumSize = new Size(
+                Math.Min(MinimumSize.Width, workingArea.Width),
+                Math.Min(MinimumSize.Height, workingArea.Height));
+
+            Size = new Size(
+                Math.Min(Width, workingArea.Width),
+                Math.Min(Height, workingArea.Height));
+
+            StartPosition = FormStartPosition.Manual;
+            Location = new Point(
+                workingArea.Left + (workingArea.Width - Width) / 2,
+                workingArea.Top + (workingArea.Height - Height) / 2);
         }
 
         #region Chrome and layout helpers
@@ -632,16 +657,31 @@ namespace MunicipalServicesApp
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
-            lblConfirmationDetail = new Label
+            // A read-only scrolling text box rather than a fixed Label: a Label silently
+            // clips whatever doesn't fit, so long descriptions or addresses (or a
+            // smaller screen / higher display scaling) cut the bottom of the report off.
+            txtConfirmationDetail = new TextBox
             {
-                AutoSize = false,
                 BackColor = Color.White,
+                BorderStyle = BorderStyle.None,
                 Dock = DockStyle.Fill,
                 Font = AppTheme.BodyFont,
                 ForeColor = AppTheme.PrimaryColor,
-                Padding = new Padding(14, 12, 14, 12),
-                TextAlign = ContentAlignment.TopLeft
+                Multiline = true,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Vertical,
+                TabStop = false,
+                WordWrap = true
             };
+
+            var confirmationFrame = new Panel
+            {
+                BackColor = Color.White,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0),
+                Padding = new Padding(14, 12, 6, 12)
+            };
+            confirmationFrame.Controls.Add(txtConfirmationDetail);
 
             AddRow(body, 24F);
             AddRow(body, 40F);
@@ -651,7 +691,7 @@ namespace MunicipalServicesApp
             body.Controls.Add(CreateFieldLabel("Your reference number"), 0, 0);
             body.Controls.Add(lblReferenceNumber, 0, 1);
             body.Controls.Add(CreateHintLabel("Quote this number whenever you follow up on this report."), 0, 2);
-            body.Controls.Add(lblConfirmationDetail, 0, 3);
+            body.Controls.Add(confirmationFrame, 0, 3);
 
             return panel;
         }
@@ -1426,6 +1466,7 @@ namespace MunicipalServicesApp
             {
                 "Logged: " + issue.DateReported.ToString("dd MMMM yyyy 'at' HH:mm"),
                 "Category: " + issue.Category,
+                "Description: " + issue.Description,
                 "Location: " + issue.Location
             };
 
@@ -1437,12 +1478,20 @@ namespace MunicipalServicesApp
             lines.Add("Attachments: " + (issue.AttachmentPaths.Count == 0
                 ? "none"
                 : issue.AttachmentPaths.Count + (issue.AttachmentPaths.Count == 1 ? " file" : " files")));
+            foreach (var path in issue.AttachmentPaths)
+            {
+                lines.Add("    - " + Path.GetFileName(path));
+            }
+
             lines.Add("Reported by: " + reportedBy);
             lines.Add("We will update you by: " + updateChannel);
             lines.Add(string.Empty);
             lines.Add("This is report number " + IssueRepository.Count + " logged in this session.");
+            lines.Add("Track its progress any time from Service Request Status on the Main Menu.");
 
-            lblConfirmationDetail.Text = string.Join(Environment.NewLine, lines.ToArray());
+            txtConfirmationDetail.Text = string.Join(Environment.NewLine, lines.ToArray());
+            txtConfirmationDetail.SelectionStart = 0;
+            txtConfirmationDetail.SelectionLength = 0;
         }
 
         private void ResetWizard()
@@ -1461,7 +1510,7 @@ namespace MunicipalServicesApp
             lstAttachments.Items.Clear();
 
             lblReferenceNumber.Text = string.Empty;
-            lblConfirmationDetail.Text = string.Empty;
+            txtConfirmationDetail.Text = string.Empty;
 
             UpdateDescriptionCount();
             UpdateAttachmentHint();
