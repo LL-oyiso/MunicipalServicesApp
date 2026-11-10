@@ -55,6 +55,12 @@
     <Compile Include="Models\ServiceRequestStatus.cs" />
     <Compile Include="Data\IssueRepository.cs" />
     <Compile Include="Data\ServiceRequestRepository.cs" />
+    <Compile Include="Data\ServiceCategoryTree.cs" />
+    <Compile Include="DataStructures\BinaryTree.cs" />
+    <Compile Include="DataStructures\BinarySearchTree.cs" />
+    <Compile Include="DataStructures\AvlTree.cs" />
+    <Compile Include="DataStructures\RedBlackTree.cs" />
+    <Compile Include="DataStructures\GeneralTree.cs" />
     <Compile Include="Data\EventsRepository.cs" />
     <Compile Include="Data\RecommendationEngine.cs" />
     <Compile Include="Data\CommunityResourcesRepository.cs" />

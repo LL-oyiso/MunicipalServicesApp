@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MunicipalServicesApp.DataStructures;
 using MunicipalServicesApp.Models;
 
 namespace MunicipalServicesApp.Data
@@ -34,7 +35,28 @@ namespace MunicipalServicesApp.Data
             "General Maintenance Crew E"
         };
 
+        /// <summary>Label used for requests staff haven't placed in a ward yet.</summary>
+        public const string UnassignedArea = "Not yet assigned";
+
         private static readonly List<Issue> _requests = new List<Issue>();
+
+        // Main tracking index: reference number -> request. Balanced, because reference
+        // numbers arrive in ascending order and would degrade a plain BST to a list.
+        private static readonly AvlTree<string, Issue> _byReference =
+            new AvlTree<string, Issue>(StringComparer.OrdinalIgnoreCase);
+
+        // The same keys in an unbalanced BST, kept only to compare its height and search
+        // steps against the AVL tree on the Service Request Status page.
+        private static readonly BinarySearchTree<string, Issue> _byReferenceUnbalanced =
+            new BinarySearchTree<string, Issue>(StringComparer.OrdinalIgnoreCase);
+
+        // Ward -> requests in that ward. Ward names arrive in no particular order, so a
+        // plain BST stays reasonably shallow here.
+        private static readonly BinarySearchTree<string, Issue> _byArea =
+            new BinarySearchTree<string, Issue>(StringComparer.OrdinalIgnoreCase);
+
+        // Date reported -> requests, for newest-first lists and date-range filters.
+        private static readonly RedBlackTree<DateTime, Issue> _byDate = new RedBlackTree<DateTime, Issue>();
 
         static ServiceRequestRepository()
         {
@@ -63,18 +85,81 @@ namespace MunicipalServicesApp.Data
                 issue.StatusHistory.Add(new StatusChange(ServiceRequestStatus.Submitted, issue.DateReported, "Request received."));
             }
 
-            _requests.Add(issue);
+            AddToIndexes(issue);
         }
 
+        private static void AddToIndexes(Issue issue)
+        {
+            _requests.Add(issue);
+            _byReference.Insert(issue.ReferenceNumber, issue);
+            _byReferenceUnbalanced.Insert(issue.ReferenceNumber, issue);
+            _byArea.Insert(AreaKey(issue.Area), issue);
+            _byDate.Insert(issue.DateReported, issue);
+        }
+
+        private static string AreaKey(string area)
+        {
+            return string.IsNullOrWhiteSpace(area) ? UnassignedArea : area;
+        }
+
+        /// <summary>Looks a request up by reference number in the AVL tree, in O(log n).</summary>
         public static Issue FindByReference(string referenceNumber)
         {
+            return FindByReference(referenceNumber, out _, out _);
+        }
+
+        /// <summary>
+        /// As <see cref="FindByReference(string)"/>, also reporting how many nodes the AVL
+        /// tree and the unbalanced BST each compared to reach the same request.
+        /// </summary>
+        public static Issue FindByReference(string referenceNumber, out int avlSteps, out int bstSteps)
+        {
+            avlSteps = 0;
+            bstSteps = 0;
             if (string.IsNullOrWhiteSpace(referenceNumber))
             {
                 return null;
             }
 
             var key = referenceNumber.Trim();
-            return _requests.FirstOrDefault(r => string.Equals(r.ReferenceNumber, key, StringComparison.OrdinalIgnoreCase));
+            var matches = _byReference.Find(key, out avlSteps);
+            _byReferenceUnbalanced.Find(key, out bstSteps);
+            return matches.Count == 0 ? null : matches[0];
+        }
+
+        /// <summary>Every request, newest report first (reverse in-order walk of the red-black tree).</summary>
+        public static List<Issue> GetNewestFirst()
+        {
+            return _byDate.ReverseInOrderValues().ToList();
+        }
+
+        /// <summary>Requests reported between two dates inclusive, newest first (red-black tree range query).</summary>
+        public static List<Issue> GetReportedBetween(DateTime from, DateTime to)
+        {
+            var results = _byDate.Range(from, to);
+            results.Reverse();
+            return results;
+        }
+
+        /// <summary>Requests placed in a ward (BST lookup); pass <see cref="UnassignedArea"/> for untriaged ones.</summary>
+        public static IReadOnlyList<Issue> GetByArea(string area)
+        {
+            return _byArea.Find(AreaKey(area));
+        }
+
+        /// <summary>Heights and sizes of the request indexes, shown on the page to compare the trees.</summary>
+        public static IndexStatistics GetIndexStatistics()
+        {
+            return new IndexStatistics
+            {
+                RequestCount = _requests.Count,
+                AvlHeight = _byReference.Height,
+                UnbalancedBstHeight = _byReferenceUnbalanced.Height,
+                RedBlackHeight = _byDate.Height,
+                RedBlackBlackHeight = _byDate.BlackHeight,
+                AreaBstHeight = _byArea.Height,
+                AreaCount = _byArea.InOrder().Count(n => n.Values.Count > 0)
+            };
         }
 
         /// <summary>Moves a request to a new status and records the change in its history.</summary>
@@ -95,6 +180,12 @@ namespace MunicipalServicesApp.Data
             if (issue == null)
             {
                 throw new ArgumentNullException(nameof(issue));
+            }
+
+            if (!string.Equals(AreaKey(issue.Area), AreaKey(area), StringComparison.OrdinalIgnoreCase))
+            {
+                _byArea.Remove(AreaKey(issue.Area), issue);
+                _byArea.Insert(AreaKey(area), issue);
             }
 
             issue.Area = area;
@@ -123,6 +214,18 @@ namespace MunicipalServicesApp.Data
 
             issue.Rating = rating;
             issue.RatingComment = comment?.Trim();
+        }
+
+        /// <summary>Snapshot of the request indexes' sizes and heights.</summary>
+        public sealed class IndexStatistics
+        {
+            public int RequestCount { get; set; }
+            public int AvlHeight { get; set; }
+            public int UnbalancedBstHeight { get; set; }
+            public int RedBlackHeight { get; set; }
+            public int RedBlackBlackHeight { get; set; }
+            public int AreaBstHeight { get; set; }
+            public int AreaCount { get; set; }
         }
 
         #region Sample data
@@ -217,7 +320,7 @@ namespace MunicipalServicesApp.Data
                 }
 
                 IssueRepository.AddSampleIssue(issue);
-                _requests.Add(issue);
+                AddToIndexes(issue);
             }
         }
 
