@@ -52,7 +52,9 @@
     <Compile Include="Models\EmergencyContact.cs" />
     <Compile Include="Models\WardCouncilMember.cs" />
     <Compile Include="Models\CommunityProgram.cs" />
+    <Compile Include="Models\ServiceRequestStatus.cs" />
     <Compile Include="Data\IssueRepository.cs" />
+    <Compile Include="Data\ServiceRequestRepository.cs" />
     <Compile Include="Data\EventsRepository.cs" />
     <Compile Include="Data\RecommendationEngine.cs" />
     <Compile Include="Data\CommunityResourcesRepository.cs" />

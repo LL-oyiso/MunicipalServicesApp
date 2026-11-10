@@ -12,12 +12,14 @@ namespace MunicipalServicesApp.Data
     public static class IssueRepository
     {
         private static readonly List<Issue> _issues = new List<Issue>();
+        private static int _lastSequence;
+        private static int _sessionReportCount;
 
-        /// <summary>Read-only view of every issue reported so far this session.</summary>
+        /// <summary>Read-only view of every issue held, including the sample requests.</summary>
         public static IReadOnlyList<Issue> Issues => _issues.AsReadOnly();
 
-        /// <summary>Number of issues reported so far this session.</summary>
-        public static int Count => _issues.Count;
+        /// <summary>Number of issues reported by the resident so far this session (sample requests excluded).</summary>
+        public static int Count => _sessionReportCount;
 
         public static void AddIssue(Issue issue)
         {
@@ -26,6 +28,24 @@ namespace MunicipalServicesApp.Data
                 throw new ArgumentNullException(nameof(issue));
             }
 
+            // Load the sample requests first, so they take the earlier reference
+            // numbers and the resident's own report is always the newest one.
+            ServiceRequestRepository.EnsureInitialized();
+
+            issue.ReferenceNumber = GenerateReferenceNumber();
+            _issues.Add(issue);
+            _sessionReportCount++;
+
+            ServiceRequestRepository.Register(issue);
+        }
+
+        /// <summary>
+        /// Adds one of the sample requests the Service Request Status feature starts
+        /// with. It shares the reference number sequence with real reports, so numbers
+        /// never collide, but doesn't count as a report logged this session.
+        /// </summary>
+        internal static void AddSampleIssue(Issue issue)
+        {
             issue.ReferenceNumber = GenerateReferenceNumber();
             _issues.Add(issue);
         }
@@ -36,8 +56,8 @@ namespace MunicipalServicesApp.Data
         /// </summary>
         private static string GenerateReferenceNumber()
         {
-            var sequence = _issues.Count + 1;
-            return $"REQ-{DateTime.Now.Year}-{sequence:D4}";
+            _lastSequence++;
+            return $"REQ-{DateTime.Now.Year}-{_lastSequence:D4}";
         }
     }
 }
