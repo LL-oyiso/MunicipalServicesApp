@@ -61,6 +61,10 @@
     <Compile Include="DataStructures\AvlTree.cs" />
     <Compile Include="DataStructures\RedBlackTree.cs" />
     <Compile Include="DataStructures\GeneralTree.cs" />
+    <Compile Include="DataStructures\Graph.cs" />
+    <Compile Include="DataStructures\WeightedGraph.cs" />
+    <Compile Include="Data\StatusWorkflow.cs" />
+    <Compile Include="Data\WardMap.cs" />
     <Compile Include="Data\EventsRepository.cs" />
     <Compile Include="Data\RecommendationEngine.cs" />
     <Compile Include="Data\CommunityResourcesRepository.cs" />

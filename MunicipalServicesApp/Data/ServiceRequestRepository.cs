@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MunicipalServicesApp.Common;
 using MunicipalServicesApp.DataStructures;
 using MunicipalServicesApp.Models;
 
@@ -147,6 +148,45 @@ namespace MunicipalServicesApp.Data
             return _byArea.Find(AreaKey(area));
         }
 
+        /// <summary>
+        /// Open requests in the order staff should handle them: most urgent priority
+        /// first, then oldest first. Built by pushing every open request onto a binary
+        /// min-heap and popping it empty - O(n log n). Rebuilt on each call, because
+        /// staff can change a request's priority at any time.
+        /// </summary>
+        public static List<Issue> GetWorkQueue()
+        {
+            var heap = new PriorityQueue<Issue>(WorkQueueOrder);
+            foreach (var request in _requests)
+            {
+                if (request.IsOpen)
+                {
+                    heap.Enqueue(request);
+                }
+            }
+
+            var ordered = new List<Issue>(heap.Count);
+            while (heap.Count > 0)
+            {
+                ordered.Add(heap.Dequeue());
+            }
+
+            return ordered;
+        }
+
+        /// <summary>The most urgent open request (the heap's root), or null if nothing is open.</summary>
+        public static Issue PeekNextJob()
+        {
+            var queue = GetWorkQueue();
+            return queue.Count == 0 ? null : queue[0];
+        }
+
+        private static readonly IComparer<Issue> WorkQueueOrder = Comparer<Issue>.Create((a, b) =>
+        {
+            var byPriority = a.Priority.CompareTo(b.Priority);
+            return byPriority != 0 ? byPriority : a.DateReported.CompareTo(b.DateReported);
+        });
+
         /// <summary>Heights and sizes of the request indexes, shown on the page to compare the trees.</summary>
         public static IndexStatistics GetIndexStatistics()
         {
@@ -162,12 +202,21 @@ namespace MunicipalServicesApp.Data
             };
         }
 
-        /// <summary>Moves a request to a new status and records the change in its history.</summary>
+        /// <summary>
+        /// Moves a request to a new status and records the change in its history. Only
+        /// moves along an edge of the <see cref="StatusWorkflow"/> graph are allowed.
+        /// </summary>
         public static void ChangeStatus(Issue issue, ServiceRequestStatus newStatus, string note)
         {
             if (issue == null)
             {
                 throw new ArgumentNullException(nameof(issue));
+            }
+
+            if (!StatusWorkflow.CanMove(issue.Status, newStatus))
+            {
+                throw new InvalidOperationException(
+                    $"A request can't move from {StatusWorkflow.DisplayName(issue.Status)} to {StatusWorkflow.DisplayName(newStatus)}.");
             }
 
             issue.Status = newStatus;
