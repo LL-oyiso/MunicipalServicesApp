@@ -68,6 +68,7 @@ namespace MunicipalServicesApp
             AddTab("Track a Request", BuildTrackTabPanel(), OnTrackTabShown);
             AddTab("All Requests", BuildAllRequestsTabPanel(), () => _tvCategories.Nodes[0].EnsureVisible());
             AddTab("Staff", BuildStaffTabPanel(), null);
+            AddTab("Crew Route and Nearby", BuildRouteTabPanel(), null);
 
             var trackButton = _tabs[TrackTabIndex].Button;
             _trackBadge.Location = new Point(trackButton.Right - 12, trackButton.Top - 6);

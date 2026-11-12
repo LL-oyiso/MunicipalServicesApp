@@ -64,22 +64,59 @@ namespace MunicipalServicesApp.Data
                 .ToList();
         }
 
-        /// <summary>The wards that currently have at least one open request.</summary>
-        public static List<string> AreasWithOpenRequests()
+        /// <summary>
+        /// The wards that currently have at least one open request, optionally only
+        /// counting requests assigned to one crew (null means every open request).
+        /// </summary>
+        public static List<string> AreasWithOpenRequests(string crew = null)
         {
             return ServiceRequestRepository.Areas
-                .Where(area => ServiceRequestRepository.GetByArea(area).Any(r => r.IsOpen))
+                .Where(area => ServiceRequestRepository.GetByArea(area).Any(r => r.IsOpen
+                    && (crew == null || string.Equals(r.AssignedCrew, crew, StringComparison.OrdinalIgnoreCase))))
                 .ToList();
         }
 
         /// <summary>
-        /// The shortest set of roads connecting every ward with open requests: a minimum
-        /// spanning tree (Prim's algorithm) over those wards, using shortest-path
-        /// distances where two wards aren't directly connected.
+        /// The shortest set of roads connecting every ward with open requests (for one
+        /// crew, or all when crew is null): a minimum spanning tree (Prim's algorithm)
+        /// over those wards, using shortest-path distances where two wards aren't
+        /// directly connected.
         /// </summary>
-        public static List<WeightedEdge<string>> PlanCrewRoute()
+        public static List<WeightedEdge<string>> PlanCrewRoute(string crew = null)
         {
-            return Graph.MinimumSpanningTree(AreasWithOpenRequests());
+            return Graph.MinimumSpanningTree(AreasWithOpenRequests(crew));
+        }
+
+        /// <summary>
+        /// The individual roads a planned route uses, each once, even when two legs of
+        /// the route share a road.
+        /// </summary>
+        public static List<WeightedEdge<string>> RoadsOnRoute(IEnumerable<WeightedEdge<string>> route)
+        {
+            var roads = new List<WeightedEdge<string>>();
+            foreach (var leg in route)
+            {
+                for (var i = 0; i < leg.Path.Count - 1; i++)
+                {
+                    var from = leg.Path[i];
+                    var to = leg.Path[i + 1];
+                    if (roads.Any(r => IsSameRoad(r, from, to)))
+                    {
+                        continue;
+                    }
+
+                    var road = Graph.Neighbours(from).First(n => string.Equals(n.Key, to, StringComparison.OrdinalIgnoreCase));
+                    roads.Add(new WeightedEdge<string>(from, to, road.Value));
+                }
+            }
+
+            return roads;
+        }
+
+        public static bool IsSameRoad(WeightedEdge<string> road, string a, string b)
+        {
+            return (string.Equals(road.From, a, StringComparison.OrdinalIgnoreCase) && string.Equals(road.To, b, StringComparison.OrdinalIgnoreCase))
+                || (string.Equals(road.From, b, StringComparison.OrdinalIgnoreCase) && string.Equals(road.To, a, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>Total km of every road in the map, to compare against the planned route.</summary>

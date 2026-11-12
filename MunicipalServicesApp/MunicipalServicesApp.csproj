@@ -89,6 +89,9 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Common\FlowLayoutHelper.cs" />
+    <Compile Include="Common\WardMapControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="MainMenuForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -118,6 +121,10 @@
     </Compile>
     <Compile Include="ServiceRequestStatusForm.Designer.cs">
       <DependentUpon>ServiceRequestStatusForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ServiceRequestStatusForm.Route.cs">
+      <DependentUpon>ServiceRequestStatusForm.cs</DependentUpon>
+      <SubType>Form</SubType>
     </Compile>
     <Compile Include="ServiceRequestStatusForm.Staff.cs">
       <DependentUpon>ServiceRequestStatusForm.cs</DependentUpon>
