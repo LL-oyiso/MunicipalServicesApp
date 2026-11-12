@@ -24,6 +24,8 @@ namespace MunicipalServicesApp
 
         private readonly List<TabEntry> _tabs = new List<TabEntry>();
         private Panel _tabStrip;
+        private NotificationBadgeControl _trackBadge;
+        private ToolTip _toolTip;
 
         // Called after any request changes, so every tab shows current data.
         private readonly List<Action> _refreshers = new List<Action>();
@@ -60,9 +62,18 @@ namespace MunicipalServicesApp
         private void BuildContent()
         {
             _tabStrip = new Panel { Dock = DockStyle.Top, Height = 52, BackColor = Color.White };
+            _toolTip = new ToolTip(components);
+            _trackBadge = new NotificationBadgeControl { BackColor = Color.White };
 
-            AddTab("Track a Request", BuildTrackTabPanel(), null);
+            AddTab("Track a Request", BuildTrackTabPanel(), OnTrackTabShown);
             AddTab("All Requests", BuildAllRequestsTabPanel(), () => _tvCategories.Nodes[0].EnsureVisible());
+            AddTab("Staff", BuildStaffTabPanel(), null);
+
+            var trackButton = _tabs[TrackTabIndex].Button;
+            _trackBadge.Location = new Point(trackButton.Right - 12, trackButton.Top - 6);
+            _tabStrip.Controls.Add(_trackBadge);
+            _trackBadge.BringToFront();
+            _refreshers.Add(UpdateUpdatesBadge);
 
             // Dock=Fill tab panels first, the Dock=Top strip last so it claims the top.
             foreach (var tab in _tabs)

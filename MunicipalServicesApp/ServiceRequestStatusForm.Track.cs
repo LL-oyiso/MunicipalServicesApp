@@ -40,6 +40,17 @@ namespace MunicipalServicesApp
         private ListView _lvHistory;
         private Issue _trackedRequest;
 
+        // Rating prompt, shown once a request is closed
+        private const int RatingRowIndex = 5;
+        private const float RatingRowHeight = 92F;
+        private const float RatedRowHeight = 46F;
+        private Panel _pnlRating;
+        private Label _lblRatingPrompt;
+        private FlowLayoutPanel _flpRatingInput;
+        private readonly List<Label> _ratingStars = new List<Label>();
+        private TextBox _txtRatingComment;
+        private int _pendingRating;
+
         // All Requests tab
         private ComboBox _cmbStatusFilter;
         private ComboBox _cmbDateFilter;
@@ -135,15 +146,58 @@ namespace MunicipalServicesApp
             return tabPanel;
         }
 
+        // ----------------------------------------------------------------
+        // Update badge: status changes on the resident's own requests not yet viewed
+        // ----------------------------------------------------------------
+
+        // Static so it survives closing and reopening the page within a session.
+        private static readonly Dictionary<Issue, int> _seenHistoryCounts = new Dictionary<Issue, int>();
+
+        /// <summary>Status changes since the resident last viewed the request (they saw the first one on the confirmation).</summary>
+        private static int UnseenUpdates(Issue request)
+        {
+            var seen = _seenHistoryCounts.TryGetValue(request, out var count) ? count : 1;
+            return Math.Max(0, request.StatusHistory.Count - seen);
+        }
+
+        private void MarkUpdatesSeen(Issue request)
+        {
+            if (IssueRepository.SessionReports.Contains(request))
+            {
+                _seenHistoryCounts[request] = request.StatusHistory.Count;
+            }
+
+            UpdateUpdatesBadge();
+        }
+
+        private void UpdateUpdatesBadge()
+        {
+            var withUpdates = IssueRepository.SessionReports.Where(r => UnseenUpdates(r) > 0).ToList();
+            _trackBadge.Count = withUpdates.Sum(UnseenUpdates);
+            _toolTip.SetToolTip(_trackBadge, withUpdates.Count == 0
+                ? string.Empty
+                : "New updates on " + string.Join(", ", withUpdates.Select(r => r.ReferenceNumber)));
+        }
+
+        /// <summary>When the Track tab opens on one of the resident's requests that has news, it counts as read.</summary>
+        private void OnTrackTabShown()
+        {
+            if (_trackedRequest != null)
+            {
+                MarkUpdatesSeen(_trackedRequest);
+            }
+        }
+
         private TableLayoutPanel BuildTrackResult()
         {
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 7, BackColor = Color.White, Padding = new Padding(16, 8, 16, 12) };
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 8, BackColor = Color.White, Padding = new Padding(16, 8, 16, 12) };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 24F));
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 86F));
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 144F));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 0F));
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 34F));
             table.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
@@ -207,7 +261,10 @@ namespace MunicipalServicesApp
             details.Controls.Add(_lblDescription, 1, 4);
             details.SetColumnSpan(_lblDescription, 3);
 
-            // Rows 5 and 6: every status change so far.
+            // Row 5: the rating prompt, only given height once the request is closed.
+            _pnlRating = BuildRatingPanel();
+
+            // Rows 6 and 7: every status change so far.
             _lvHistory = CreateListView(Column("Date", 160), Column("Status", 120), Column("Update", 600));
 
             table.Controls.Add(header, 0, 0);
@@ -215,10 +272,107 @@ namespace MunicipalServicesApp
             table.Controls.Add(timelineFrame, 0, 2);
             table.Controls.Add(_lblProgress, 0, 3);
             table.Controls.Add(details, 0, 4);
-            table.Controls.Add(CreateHeading("Status history"), 0, 5);
-            table.Controls.Add(_lvHistory, 0, 6);
+            table.Controls.Add(_pnlRating, 0, RatingRowIndex);
+            table.Controls.Add(CreateHeading("Status history"), 0, 6);
+            table.Controls.Add(_lvHistory, 0, 7);
 
             return table;
+        }
+
+        private Panel BuildRatingPanel()
+        {
+            var panel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(255, 248, 225), Padding = new Padding(12, 6, 12, 6), Margin = new Padding(0, 6, 0, 0), Visible = false };
+
+            _lblRatingPrompt = new Label { Dock = DockStyle.Top, Height = 26, Font = AppTheme.LabelFont, ForeColor = AppTheme.PrimaryColor, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true };
+
+            _flpRatingInput = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
+            for (var i = 1; i <= 5; i++)
+            {
+                var value = i;
+                var star = new Label
+                {
+                    AutoSize = false,
+                    Cursor = Cursors.Hand,
+                    Font = new Font("Segoe UI Symbol", 20F),
+                    Margin = new Padding(0),
+                    Size = new Size(36, 40),
+                    Text = "\u2605",
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+                star.Click += (s, e) => SetPendingRating(value);
+                _ratingStars.Add(star);
+                _flpRatingInput.Controls.Add(star);
+            }
+
+            _txtRatingComment = new TextBox { Font = AppTheme.BodyFont, Width = 380, Margin = new Padding(16, 9, 8, 0) };
+            var commentHint = new Label { AutoSize = true, Font = AppTheme.SmallFont, ForeColor = AppTheme.SecondaryColor, Text = "Comment (optional)", Margin = new Padding(16, 13, 0, 0) };
+
+            var btnSubmit = new Button { Text = "Submit rating", Size = new Size(140, 34), Margin = new Padding(8, 4, 0, 0) };
+            AppTheme.StylePrimaryButton(btnSubmit);
+            btnSubmit.Click += (s, e) => SubmitRating();
+
+            _flpRatingInput.Controls.Add(commentHint);
+            _flpRatingInput.Controls.Add(_txtRatingComment);
+            _flpRatingInput.Controls.Add(btnSubmit);
+
+            panel.Controls.Add(_flpRatingInput);
+            panel.Controls.Add(_lblRatingPrompt);
+            return panel;
+        }
+
+        private void SetPendingRating(int rating)
+        {
+            _pendingRating = rating;
+            for (var i = 0; i < _ratingStars.Count; i++)
+            {
+                _ratingStars[i].ForeColor = i < rating ? Color.FromArgb(240, 170, 0) : Color.FromArgb(205, 205, 205);
+            }
+        }
+
+        private void SubmitRating()
+        {
+            if (_trackedRequest == null)
+            {
+                return;
+            }
+
+            if (_pendingRating == 0)
+            {
+                _lblRatingPrompt.Text = "Click a star first: 1 is poor and 5 is excellent.";
+                _lblRatingPrompt.ForeColor = AppTheme.DangerColor;
+                return;
+            }
+
+            ServiceRequestRepository.RateService(_trackedRequest, _pendingRating, _txtRatingComment.Text);
+            RefreshAllViews();
+        }
+
+        /// <summary>Shows the rating prompt for an unrated closed request, or the rating already given.</summary>
+        private void ShowRating(Issue request)
+        {
+            var isClosed = request.Status == ServiceRequestStatus.Closed;
+            var isRated = request.Rating.HasValue;
+            _pnlRating.Visible = isClosed;
+            _flpRatingInput.Visible = !isRated;
+            _trackResult.RowStyles[RatingRowIndex].Height = !isClosed ? 0F : isRated ? RatedRowHeight : RatingRowHeight;
+            if (!isClosed)
+            {
+                return;
+            }
+
+            _lblRatingPrompt.ForeColor = AppTheme.PrimaryColor;
+            if (isRated)
+            {
+                _lblRatingPrompt.Text = "Thank you for your feedback. You rated this service "
+                    + new string('\u2605', request.Rating.Value) + " (" + request.Rating.Value + " out of 5)"
+                    + (string.IsNullOrWhiteSpace(request.RatingComment) ? "." : ": \"" + request.RatingComment + "\"");
+            }
+            else
+            {
+                _lblRatingPrompt.Text = "This request is closed. How did we do? Rate the service you received.";
+                _txtRatingComment.Text = string.Empty;
+                SetPendingRating(0);
+            }
         }
 
         private static void AddDetail(TableLayoutPanel details, int row, int column, string name, Label value)
@@ -260,6 +414,7 @@ namespace MunicipalServicesApp
                 "Found by the AVL tree in {0} comparison{1}. An unbalanced binary search tree holding the same {2} requests needed {3}.",
                 avlSteps, avlSteps == 1 ? string.Empty : "s", ServiceRequestRepository.Count, bstSteps);
             ShowTrackedRequest(request, searchCost);
+            MarkUpdatesSeen(request);
         }
 
         private void OpenInTrackTab(Issue request)
@@ -286,6 +441,7 @@ namespace MunicipalServicesApp
 
             ShowTimeline(request.Status);
             _lblProgress.Text = DescribeProgress(request);
+            ShowRating(request);
 
             _lblCategory.Text = string.IsNullOrWhiteSpace(request.SubCategory)
                 ? request.Category + " (sub-type set when staff triage it)"

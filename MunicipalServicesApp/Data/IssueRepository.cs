@@ -12,17 +12,20 @@ namespace MunicipalServicesApp.Data
     public static class IssueRepository
     {
         private static readonly List<Issue> _issues = new List<Issue>();
+        private static readonly List<Issue> _sessionReports = new List<Issue>();
         private static int _lastSequence;
-        private static int _sessionReportCount;
 
         /// <summary>Read-only view of every issue held, including the sample requests.</summary>
         public static IReadOnlyList<Issue> Issues => _issues.AsReadOnly();
 
+        /// <summary>The issues the resident reported this session, oldest first (sample requests excluded).</summary>
+        public static IReadOnlyList<Issue> SessionReports => _sessionReports.AsReadOnly();
+
         /// <summary>Number of issues reported by the resident so far this session (sample requests excluded).</summary>
-        public static int Count => _sessionReportCount;
+        public static int Count => _sessionReports.Count;
 
         /// <summary>The most recent issue the resident reported this session, or null if none yet.</summary>
-        public static Issue LastReported { get; private set; }
+        public static Issue LastReported => _sessionReports.Count == 0 ? null : _sessionReports[_sessionReports.Count - 1];
 
         public static void AddIssue(Issue issue)
         {
@@ -37,8 +40,7 @@ namespace MunicipalServicesApp.Data
 
             issue.ReferenceNumber = GenerateReferenceNumber();
             _issues.Add(issue);
-            _sessionReportCount++;
-            LastReported = issue;
+            _sessionReports.Add(issue);
 
             ServiceRequestRepository.Register(issue);
         }

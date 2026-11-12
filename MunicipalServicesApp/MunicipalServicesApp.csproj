@@ -119,6 +119,10 @@
     <Compile Include="ServiceRequestStatusForm.Designer.cs">
       <DependentUpon>ServiceRequestStatusForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ServiceRequestStatusForm.Staff.cs">
+      <DependentUpon>ServiceRequestStatusForm.cs</DependentUpon>
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="ServiceRequestStatusForm.Track.cs">
       <DependentUpon>ServiceRequestStatusForm.cs</DependentUpon>
       <SubType>Form</SubType>
