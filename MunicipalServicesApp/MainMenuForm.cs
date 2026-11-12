@@ -5,9 +5,8 @@ using MunicipalServicesApp.Common;
 namespace MunicipalServicesApp
 {
     /// <summary>
-    /// The application's startup screen. Presents the three top-level tasks; only
-    /// "Report Issues" is implemented in this phase, so the other two are visibly
-    /// disabled (with an explanatory tooltip) rather than left looking broken.
+    /// The application's startup screen: Report Issues, Local Events and Announcements,
+    /// Community Resources and Service Request Status, one card each.
     /// </summary>
     public partial class MainMenuForm : Form
     {
@@ -101,6 +100,30 @@ namespace MunicipalServicesApp
             {
                 MessageBox.Show(
                     "Something went wrong opening the Community Resources screen:" + Environment.NewLine + ex.Message,
+                    "Municipal Services App",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            finally
+            {
+                this.Show();
+            }
+        }
+
+        private void cardServiceStatus_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                using (var serviceRequestStatusForm = new ServiceRequestStatusForm())
+                {
+                    this.Hide();
+                    serviceRequestStatusForm.ShowDialog(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Something went wrong opening the Service Request Status screen:" + Environment.NewLine + ex.Message,
                     "Municipal Services App",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);

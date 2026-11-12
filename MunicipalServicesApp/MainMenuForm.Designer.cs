@@ -151,21 +151,19 @@ namespace MunicipalServicesApp
             //
             // cardServiceStatus
             //
-            this.cardServiceStatus.BadgeText = "Coming soon";
-            this.cardServiceStatus.Description = "Search for a service request you have already logged and follow its progress.";
+            this.cardServiceStatus.Description = "Track a service request you have already logged using its reference number and follow its progress.";
             this.cardServiceStatus.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.cardServiceStatus.Enabled = false;
             this.cardServiceStatus.Icon = MunicipalServicesApp.Common.MenuCardIcon.Search;
             this.cardServiceStatus.Margin = new System.Windows.Forms.Padding(12, 12, 0, 0);
             this.cardServiceStatus.Name = "cardServiceStatus";
             this.cardServiceStatus.Title = "Service Request Status";
-            this.toolTip1.SetToolTip(this.cardServiceStatus, "Coming soon in a future update.");
+            this.cardServiceStatus.Click += new System.EventHandler(this.cardServiceStatus_Click);
             //
             // lblFooterNote
             //
             this.lblFooterNote.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblFooterNote.Name = "lblFooterNote";
-            this.lblFooterNote.Text = "Service Request Status will be available in a future update.";
+            this.lblFooterNote.Text = "Keep the reference number you receive when reporting an issue to track it under Service Request Status.";
             this.lblFooterNote.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             //
             // MainMenuForm

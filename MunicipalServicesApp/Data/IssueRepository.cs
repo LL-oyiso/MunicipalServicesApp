@@ -21,6 +21,9 @@ namespace MunicipalServicesApp.Data
         /// <summary>Number of issues reported by the resident so far this session (sample requests excluded).</summary>
         public static int Count => _sessionReportCount;
 
+        /// <summary>The most recent issue the resident reported this session, or null if none yet.</summary>
+        public static Issue LastReported { get; private set; }
+
         public static void AddIssue(Issue issue)
         {
             if (issue == null)
@@ -35,6 +38,7 @@ namespace MunicipalServicesApp.Data
             issue.ReferenceNumber = GenerateReferenceNumber();
             _issues.Add(issue);
             _sessionReportCount++;
+            LastReported = issue;
 
             ServiceRequestRepository.Register(issue);
         }
