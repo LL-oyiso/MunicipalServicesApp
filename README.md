@@ -235,7 +235,8 @@ MunicipalServicesApp\MunicipalServicesApp\bin\Debug\MunicipalServicesApp.exe
      move it to the next status with a note for the resident. Only the moves the workflow
      allows are offered: Submitted to Assigned or Rejected, Assigned to In Progress, In
      Progress to On Hold or Resolved, On Hold back to In Progress, and Resolved to Closed (or
-     back to In Progress). Assigning needs a ward and crew; rejecting needs a reason.
+     back to In Progress). The line under the list also shows every status the request can
+     still reach later. Assigning needs a ward and crew; rejecting needs a reason.
    - **Crew Route and Nearby** - a map of the wards and roads. The thick blue roads are the
      shortest network linking every ward with open work (a minimum spanning tree), for all
      crews or one crew. On the right, pick a ward (or click one on the map) to list open
@@ -266,8 +267,10 @@ MunicipalServicesApp\MunicipalServicesApp\bin\Debug\MunicipalServicesApp.exe
   indexes them by date reported for the newest-first list and date range filters; a
   `BinarySearchTree` indexes them by ward; a `GeneralTree` holds the department > category >
   sub-type hierarchy behind the category filter; the existing binary min-heap
-  (`PriorityQueue<T>`) orders the staff work queue; a directed `Graph` of statuses decides
-  which status changes are allowed and, by breadth-first search, how many steps are left; and
+  (`PriorityQueue<T>`) holds the live staff work queue, so the next job is read from its root
+  in O(1); a directed `Graph` of statuses decides which status changes are allowed, how many
+  steps are left (breadth-first search) and which statuses are still reachable (depth-first
+  search); and
   a `WeightedGraph` of wards finds nearby open requests by breadth-first search and plans the
   crew route as a minimum spanning tree with Prim's algorithm.
 - **Data structures used by Local Events and Announcements**: each piece of the feature maps
