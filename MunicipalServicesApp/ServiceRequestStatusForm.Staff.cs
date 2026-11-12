@@ -116,7 +116,7 @@ namespace MunicipalServicesApp
             }
             editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));  // status heading
             editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 34F));  // move to
-            editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));  // allowed moves hint
+            editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 56F));  // allowed moves hint
             editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 62F));  // note
             editor.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // save + feedback
 
@@ -225,7 +225,7 @@ namespace MunicipalServicesApp
             }
             _lvWorkQueue.EndUpdate();
 
-            var next = queue.FirstOrDefault();
+            var next = ServiceRequestRepository.PeekNextJob();
             _lblNextJob.Text = next == null
                 ? "No open requests. Every request is closed or rejected."
                 : string.Format("Next job: {0}, {1} priority, {2} in {3}.",
@@ -287,7 +287,8 @@ namespace MunicipalServicesApp
             _lblAllowedMoves.Text = nextStatuses.Count == 0
                 ? StatusWorkflow.DisplayName(request.Status) + " is final, so the status can no longer change."
                 : "The workflow graph allows " + StatusWorkflow.DisplayName(request.Status) + " to move to "
-                    + string.Join(" or ", StatusWorkflow.DisplayNames(nextStatuses)) + ".";
+                    + string.Join(" or ", StatusWorkflow.DisplayNames(nextStatuses)) + ". From here it can still reach: "
+                    + string.Join(", ", StatusWorkflow.DisplayNames(StatusWorkflow.ReachableStatuses(request.Status))) + ".";
 
             _txtStatusNote.Text = string.Empty;
         }

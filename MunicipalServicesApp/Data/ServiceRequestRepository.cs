@@ -59,6 +59,27 @@ namespace MunicipalServicesApp.Data
         // Date reported -> requests, for newest-first lists and date-range filters.
         private static readonly RedBlackTree<DateTime, Issue> _byDate = new RedBlackTree<DateTime, Issue>();
 
+        // Staff work queue, kept as one live heap. A heap can't cheaply find and move an
+        // item whose priority changed, so a fresh entry is pushed instead and the old one
+        // is marked stale by its version; stale entries are discarded when they reach the root.
+        private static readonly PriorityQueue<WorkQueueEntry> _workQueue =
+            new PriorityQueue<WorkQueueEntry>(Comparer<WorkQueueEntry>.Create((a, b) =>
+            {
+                // Compare the priority saved in the entry: the request's own priority may
+                // have changed since it was pushed, and the heap order must not shift under it.
+                var byPriority = a.Priority.CompareTo(b.Priority);
+                return byPriority != 0 ? byPriority : a.Request.DateReported.CompareTo(b.Request.DateReported);
+            }));
+
+        private static readonly Dictionary<Issue, int> _workQueueVersions = new Dictionary<Issue, int>();
+
+        private struct WorkQueueEntry
+        {
+            public Issue Request;
+            public RequestPriority Priority;
+            public int Version;
+        }
+
         static ServiceRequestRepository()
         {
             SeedSampleRequests();
@@ -96,6 +117,25 @@ namespace MunicipalServicesApp.Data
             _byReferenceUnbalanced.Insert(issue.ReferenceNumber, issue);
             _byArea.Insert(AreaKey(issue.Area), issue);
             _byDate.Insert(issue.DateReported, issue);
+
+            if (issue.IsOpen)
+            {
+                PushToWorkQueue(issue);
+            }
+        }
+
+        /// <summary>Adds a current entry for the request to the work queue heap, in O(log n).</summary>
+        private static void PushToWorkQueue(Issue issue)
+        {
+            _workQueueVersions.TryGetValue(issue, out var version);
+            version++;
+            _workQueueVersions[issue] = version;
+            _workQueue.Enqueue(new WorkQueueEntry { Request = issue, Priority = issue.Priority, Version = version });
+        }
+
+        private static bool IsStale(WorkQueueEntry entry)
+        {
+            return !entry.Request.IsOpen || entry.Version != _workQueueVersions[entry.Request];
         }
 
         private static string AreaKey(string area)
@@ -149,10 +189,10 @@ namespace MunicipalServicesApp.Data
         }
 
         /// <summary>
-        /// Open requests in the order staff should handle them: most urgent priority
-        /// first, then oldest first. Built by pushing every open request onto a binary
-        /// min-heap and popping it empty - O(n log n). Rebuilt on each call, because
-        /// staff can change a request's priority at any time.
+        /// Every open request in the order staff should handle them: most urgent priority
+        /// first, then oldest first. Listing all of them in order is a heap sort - push
+        /// each open request onto a binary min-heap and pop it empty - O(n log n), the
+        /// same as any sort. For just the next job, use <see cref="PeekNextJob"/>.
         /// </summary>
         public static List<Issue> GetWorkQueue()
         {
@@ -174,11 +214,19 @@ namespace MunicipalServicesApp.Data
             return ordered;
         }
 
-        /// <summary>The most urgent open request (the heap's root), or null if nothing is open.</summary>
+        /// <summary>
+        /// The most urgent open request, read from the root of the live work queue heap
+        /// in O(1). Stale entries (closed requests, or ones whose priority has since
+        /// changed) are discarded first, each in O(log n). Null if nothing is open.
+        /// </summary>
         public static Issue PeekNextJob()
         {
-            var queue = GetWorkQueue();
-            return queue.Count == 0 ? null : queue[0];
+            while (_workQueue.Count > 0 && IsStale(_workQueue.Peek()))
+            {
+                _workQueue.Dequeue();
+            }
+
+            return _workQueue.Count == 0 ? null : _workQueue.Peek().Request;
         }
 
         private static readonly IComparer<Issue> WorkQueueOrder = Comparer<Issue>.Create((a, b) =>
@@ -219,8 +267,14 @@ namespace MunicipalServicesApp.Data
                     $"A request can't move from {StatusWorkflow.DisplayName(issue.Status)} to {StatusWorkflow.DisplayName(newStatus)}.");
             }
 
+            var wasOpen = issue.IsOpen;
             issue.Status = newStatus;
             issue.StatusHistory.Add(new StatusChange(newStatus, DateTime.Now, note));
+
+            if (!wasOpen && issue.IsOpen)
+            {
+                PushToWorkQueue(issue);
+            }
         }
 
         /// <summary>Records staff's triage decisions: which ward, sub-type, crew and priority.</summary>
@@ -240,7 +294,15 @@ namespace MunicipalServicesApp.Data
             issue.Area = area;
             issue.SubCategory = subCategory;
             issue.AssignedCrew = crew;
-            issue.Priority = priority;
+
+            if (issue.Priority != priority)
+            {
+                issue.Priority = priority;
+                if (issue.IsOpen)
+                {
+                    PushToWorkQueue(issue);
+                }
+            }
         }
 
         /// <summary>Saves the resident's 1-5 rating of a closed request.</summary>

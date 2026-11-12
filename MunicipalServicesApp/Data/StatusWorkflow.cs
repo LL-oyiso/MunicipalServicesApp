@@ -67,6 +67,18 @@ namespace MunicipalServicesApp.Data
             return Graph.ShortestPath(ServiceRequestStatus.Submitted, ServiceRequestStatus.Closed);
         }
 
+        /// <summary>
+        /// Every status a request can still end up in from its current one, found by
+        /// depth-first search (one branch of the workflow followed to its end before the
+        /// next). The current status itself is left out. Empty for a final status.
+        /// </summary>
+        public static List<ServiceRequestStatus> ReachableStatuses(ServiceRequestStatus status)
+        {
+            var reachable = Graph.DepthFirst(status);
+            reachable.Remove(status);
+            return reachable;
+        }
+
         /// <summary>Every status reachable from Submitted, nearest first (breadth-first order).</summary>
         public static List<ServiceRequestStatus> AllStatusesInWorkflowOrder()
         {
