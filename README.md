@@ -1,11 +1,11 @@
 # Municipal Services App
 
 A C# Windows Forms (.NET Framework 4.8) application that lets residents report municipal
-issues, browse local events and announcements, and (in a later phase) check on service
-requests. This phase implements the **Report Issues** and **Local Events and Announcements**
-tasks in full; **Service Request Status** is visible on the main menu but intentionally
-disabled, ready for a later phase. A bonus **Community Resources** section is also included -
-see the note below, it is an unmarked extra and not part of the graded submission.
+issues, browse local events and announcements, and track their service requests from
+submission to closure. All three tasks are implemented: **Report Issues** (Part 1), **Local
+Events and Announcements** (Part 2) and **Service Request Status** (Part 3). A bonus
+**Community Resources** section is also included - see the note below, it is an unmarked
+extra and not part of the graded submission.
 
 > **Community Resources is a bonus, non-marked extra.** It is not required by, and is not
 > scored against, the marking rubric for this submission. It was added purely to make the app
@@ -33,12 +33,25 @@ MunicipalServicesApp/
   README.md                          - this file
   MunicipalServicesApp/              - project folder
     Program.cs                       - application entry point
-    MainMenuForm.cs / .Designer.cs   - startup screen (4 tasks, 1 disabled, 1 bonus)
+    MainMenuForm.cs / .Designer.cs   - startup screen (3 tasks plus 1 bonus)
     ReportIssuesForm.cs / .Designer.cs - the Report Issues wizard
     LocalEventsForm.cs / .Designer.cs  - the Local Events and Announcements screen
+    ServiceRequestStatusForm.cs / .Designer.cs - the Service Request Status screen (tabs, shared helpers)
+      ServiceRequestStatusForm.Track.cs - Track a Request and All Requests tabs, update badge, rating
+      ServiceRequestStatusForm.Staff.cs - Staff tab: heap work queue, triage, status changes
+      ServiceRequestStatusForm.Route.cs - Crew Route and Nearby tab, tree height comparison
     CommunityResourcesForm.cs / .Designer.cs - bonus section (not marked), see below
+    DataStructures/
+      BinaryTree.cs                  - binary tree node and base class (traversals, height)
+      BinarySearchTree.cs            - binary search tree (insert, find, range, rotations)
+      AvlTree.cs                     - self-balancing AVL tree (reference number index)
+      RedBlackTree.cs                - red-black tree (date reported index)
+      GeneralTree.cs                 - general n-ary tree (service category hierarchy)
+      Graph.cs                       - adjacency-list graph with BFS, DFS and fewest-hops path
+      WeightedGraph.cs               - weighted graph with Dijkstra and Prim's minimum spanning tree
     Models/
-      Issue.cs                       - data model for a single reported issue
+      Issue.cs                       - data model for a single reported issue / service request
+      ServiceRequestStatus.cs        - status and priority enums, one status-history entry
       Event.cs                       - data model for a single local event
       Announcement.cs                - data model for a single municipal announcement
       EmergencyContact.cs            - bonus: a single emergency service contact
@@ -46,6 +59,11 @@ MunicipalServicesApp/
       CommunityProgram.cs            - bonus: a single community support programme
     Data/
       IssueRepository.cs             - in-memory List<Issue> store for all reported issues
+      ServiceRequestRepository.cs    - service requests with AVL, BST and red-black indexes,
+                                        heap work queue and 25 fictional sample requests
+      ServiceCategoryTree.cs         - department > category > sub-type general tree
+      StatusWorkflow.cs              - directed graph of allowed status changes
+      WardMap.cs                     - weighted ward road graph: nearby search and crew route
       EventsRepository.cs            - in-memory event/announcement store (dictionaries,
                                         sorted dictionary, hash sets, queue - seeded with
                                         sample data)
@@ -67,6 +85,7 @@ MunicipalServicesApp/
                                         all three Community Resources sections
       FlowLayoutHelper.cs            - shared FlowLayoutPanel wrap-height fix used by every
                                         scrollable card gallery in the app
+      WardMapControl.cs              - custom-drawn ward map showing roads, route and open requests
 ```
 
 The wizard's Designer file holds only the persistent chrome - the header bar with the step
@@ -108,8 +127,7 @@ MunicipalServicesApp\MunicipalServicesApp\bin\Debug\MunicipalServicesApp.exe
    - **Local Events and Announcements** - enabled, described further down.
    - **Community Resources** - enabled, tagged **"Bonus"**; a non-marked extra described
      further down.
-   - **Service Request Status** - disabled (greyed out); hover over it to see a tooltip
-     explaining it's coming in a future update.
+   - **Service Request Status** - enabled, described further down.
 
 2. Click **Report Issues** to open the reporting wizard. Instead of one long form, the
    report is captured over six short steps, with a seventh confirmation screen at the end.
@@ -157,10 +175,12 @@ MunicipalServicesApp\MunicipalServicesApp\bin\Debug\MunicipalServicesApp.exe
 
 4. Click **Submit** on the summary step to log the report.
 
-5. The **Confirmation** screen shows your **reference number** (for example `REQ-2026-0001`)
-   in large text, along with a recap of the report and how many reports you have logged this
-   session. From here you can either click **New Report** to clear everything and start a
-   fresh report at step 1, or **Close** to return to the main menu.
+5. The **Confirmation** screen shows your **reference number** in large text, along with a
+   scrollable recap of the report (category, description, location, attachments and contact
+   details) and how many reports you have logged this session. Because 25 fictional sample
+   requests are loaded first, your first report is `REQ-2026-0026`. From here you can either
+   click **New Report** to clear everything and start a fresh report at step 1, or **Close**
+   to return to the main menu.
 
 6. Clicking **Cancel** in the footer at any point returns you to the main menu. If you have
    already entered something, it asks you to confirm first so a report is never discarded by
@@ -196,7 +216,32 @@ MunicipalServicesApp\MunicipalServicesApp\bin\Debug\MunicipalServicesApp.exe
        oldest pending request (first-in-first-out) onto the public Announcements gallery
        above.
 
-8. **Community Resources (bonus, not marked)** - click the **"Bonus"**-tagged card on the
+8. Click **Service Request Status** on the main menu to track requests (it opens maximized).
+   It has four tabs:
+
+   - **Track a Request** - type a reference number and press **Track** (or Enter). It opens on
+     your most recent report if you made one this session. You see the status and priority,
+     how the lookup was done ("Found by the AVL tree in 5 comparisons..."), a timeline of the
+     workflow's main path (Submitted, Assigned, In Progress, Resolved, Closed), how many steps
+     are left, the request details and the full status history. Once a request is **Closed**,
+     a "How did we do?" box asks you to rate the service from 1 to 5 stars with an optional
+     comment. A red badge on this tab counts status changes on your own reports that you
+     haven't looked at yet.
+   - **All Requests** - every request, newest first, filtered by status (including "Open
+     requests only"), date reported (last 7 or 30 days), ward and the service category tree
+     on the left. Double-click a request to track it.
+   - **Staff** - for municipal officials. The work queue lists open requests most urgent
+     first, then longest waiting. Select one to set its ward, sub-type, priority and crew, and
+     move it to the next status with a note for the resident. Only the moves the workflow
+     allows are offered: Submitted to Assigned or Rejected, Assigned to In Progress, In
+     Progress to On Hold or Resolved, On Hold back to In Progress, and Resolved to Closed (or
+     back to In Progress). Assigning needs a ward and crew; rejecting needs a reason.
+   - **Crew Route and Nearby** - a map of the wards and roads. The thick blue roads are the
+     shortest network linking every ward with open work (a minimum spanning tree), for all
+     crews or one crew. On the right, pick a ward (or click one on the map) to list open
+     requests in it and in neighbouring wards, and compare the heights of the request trees.
+
+9. **Community Resources (bonus, not marked)** - click the **"Bonus"**-tagged card on the
    main menu to open this screen. It has three tabs:
 
    - **Emergency Services** - filter by **Service Type** (Fire Brigade, Ambulance, Police,
@@ -212,14 +257,19 @@ MunicipalServicesApp\MunicipalServicesApp\bin\Debug\MunicipalServicesApp.exe
 
 ## Notes
 
-- **Data storage**: reported issues, events and announcements are all stored in memory only
-  (`IssueRepository` and `EventsRepository`), for the duration of the running application.
-  There is no database or file persistence yet - this will be introduced as a later task
-  (Service Request Status) is implemented.
-- **Why Service Request Status is disabled**: the brief for this phase requires Report Issues
-  and Local Events and Announcements; Service Request Status is deliberately left as a
-  visibly disabled placeholder rather than removed, so the full intended navigation structure
-  of the app is already in place for future work.
+- **Data storage**: reported issues, service requests, events and announcements are all
+  stored in memory only, for the duration of the running application. There is no database
+  or file persistence; the sample requests, names, streets and ward distances are fictional.
+- **Data structures used by Service Request Status**: an `AvlTree` indexes requests by
+  reference number for O(log n) tracking, with an unbalanced `BinarySearchTree` over the same
+  keys kept only to show how far it degrades when keys arrive in order; a `RedBlackTree`
+  indexes them by date reported for the newest-first list and date range filters; a
+  `BinarySearchTree` indexes them by ward; a `GeneralTree` holds the department > category >
+  sub-type hierarchy behind the category filter; the existing binary min-heap
+  (`PriorityQueue<T>`) orders the staff work queue; a directed `Graph` of statuses decides
+  which status changes are allowed and, by breadth-first search, how many steps are left; and
+  a `WeightedGraph` of wards finds nearby open requests by breadth-first search and plans the
+  crew route as a minimum spanning tree with Prim's algorithm.
 - **Data structures used by Local Events and Announcements**: each piece of the feature maps
   onto a different core data structure. `EventsRepository` indexes events by `Dictionary`
   (lookup by ID), `Dictionary<string, List<Event>>` (by category) and `SortedDictionary`
